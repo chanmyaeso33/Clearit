@@ -1,0 +1,2 @@
+# Clearit
+Text simplification tool.
