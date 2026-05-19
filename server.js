@@ -622,13 +622,13 @@ Start copying the text now — output ONLY the raw characters from the image:`
     const imageScript = detectScript(extractedText);
     console.log('STEP 1.5 — Image script detected:', imageScript, '| Target output lang:', targetLang);
 
-    // Only run cleanup if text looks noisy (has [?] markers or mixed garbled chars)
+    // Always run OCR cleanup — Burmese/Thai corruption doesn't always produce [?] markers
+    // Broken Unicode combining marks and spacing corruption are invisible without cleanup
     let cleanedText = extractedText;
-    const hasNoise = extractedText.includes('[?]') || extractedText.includes('[unreadable') ||
-                     (extractedText.match(/[\x00-\x1F]/g) || []).length > 3;
+    const hasNoise = true; // Always clean — OCR noise is always present in scanned images
 
     if (hasNoise) {
-      console.log('STEP 1.5 — OCR noise detected, running cleanup pass...');
+      console.log('STEP 1.5 — Running OCR cleanup pass (always on for scan pipeline)...');
       const cleanupMessages = [
         {
           role: 'system',
@@ -724,6 +724,18 @@ FORBIDDEN PATTERNS — never do these:
 - Do NOT write conclusions the source does not reach
 - Do NOT add examples to illustrate the source's points
 
+TOPIC-COMPLETING PROHIBITION — this is the most critical rule:
+You are NOT allowed to use your training knowledge to complete or enrich the topic.
+Seeing a topic keyword does NOT give permission to add related knowledge.
+Specific examples of forbidden topic-completion:
+- Seeing "Korea" or "Korean" → do NOT add K-pop, BTS, Samsung, Hallyu, kimchi unless written
+- Seeing "technology" → do NOT add social media, internet, smartphones unless written
+- Seeing "education" → do NOT add inequality, access, reform unless written
+- Seeing "environment" → do NOT add climate change, carbon, pollution unless written
+- Seeing Burmese academic prose → do NOT add globalization, youth culture, social issues unless written
+- Seeing numbers → do NOT convert, extrapolate, or contextualize them
+The source text is the COMPLETE universe of allowed information. Nothing else exists.
+
 NUMBERS, DATES, CURRENCIES — zero tolerance for invention:
 - Copy ALL numbers EXACTLY as they appear in the source (e.g. 900, 1,000, 10,000, 2569, 2570)
 - Copy ALL dates EXACTLY as written — do NOT convert Thai Buddhist Era years to Western years
@@ -809,6 +821,64 @@ Return ONLY this JSON:
         language: 'Unknown',
         topic: 'Tech'
       };
+    }
+
+    // ── Novel word ratio check — reject output if too many new tokens not in source ──
+    // Prevents topic-completing hallucinations (e.g. "technology revolution" from Burmese text)
+    function novelWordRatio(sourceText, outputText) {
+      if (!sourceText || !outputText) return 0;
+      const sourceWords = new Set(
+        sourceText.toLowerCase().replace(/[^\w\u1000-\u109F\u0E00-\u0E7F\s]/g, ' ')
+          .split(/\s+/).filter(w => w.length > 2)
+      );
+      const outputWords = outputText.toLowerCase().replace(/[^\w\u1000-\u109F\u0E00-\u0E7F\s]/g, ' ')
+        .split(/\s+/).filter(w => w.length > 2);
+      if (outputWords.length === 0) return 0;
+      const novelWords = outputWords.filter(w => !sourceWords.has(w));
+      return novelWords.length / outputWords.length;
+    }
+
+    const novelRatio = novelWordRatio(cleanedText, parsed.text || '');
+    console.log('Novel word ratio:', novelRatio.toFixed(2), '(>0.5 = likely hallucination)');
+
+    if (novelRatio > 0.5 && (parsed.text || '').length > 30) {
+      console.warn('HALLUCINATION DETECTED: novel word ratio', novelRatio.toFixed(2), '— retrying with stricter prompt');
+      // Retry with even stricter instruction
+      groundedMessages[1].content = `SOURCE TEXT (your ONLY allowed source):
+"""
+${cleanedText}
+"""
+
+CRITICAL RETRY: Your previous output introduced too many words not found in the source text.
+This means you were generating from your own knowledge, not from the source.
+
+You MUST:
+- Use ONLY words and concepts present in the source text above
+- Do NOT use any word that does not appear in the source
+- If you cannot summarize without adding new words, write only what IS in the source
+- 1-3 sentences maximum — precision over completeness
+
+Return ONLY this JSON:
+{"text":"faithful compression using only source words in ${targetLang}","lang":"${imageScript}","topic":"one of: Tech Legal Science Health Finance Education Food Politics Philosophy Creative News Business Culture"}`;
+
+      const retryHallRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          max_tokens: 600,
+          temperature: 0.0, // Zero — no creativity at all on retry
+          messages: groundedMessages
+        })
+      });
+      if (retryHallRes.ok) {
+        const retryHallData = await retryHallRes.json();
+        const retryHallParsed = safeParseJSON(retryHallData.choices[0].message.content, 'text');
+        if (retryHallParsed && retryHallParsed.text) {
+          console.log('Hallucination retry output:', retryHallParsed.text.substring(0, 200));
+          Object.assign(parsed, retryHallParsed);
+        }
+      }
     }
 
     // Burmese output validation — retry if English came back
@@ -959,5 +1029,5 @@ app.post('/api/check-subscription', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`ClearIt server v2.1 — Sharp OCR pipeline active on port ${PORT}`);
+  console.log(`ClearIt server v2.0 on port ${PORT}`);
 });
