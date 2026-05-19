@@ -819,12 +819,16 @@ ${isSummarize
 - Preserve all names, numbers, and facts exactly as written
 - 2-4 sentences maximum — brevity and accuracy over completeness
 - If something is unclear from OCR, leave it out rather than guess`
-  : `FAITHFUL SIMPLIFICATION RULES:
-- Rewrite in plain, clear ${targetLang} that anyone can understand
-- Keep ONLY facts and meanings present in the source — nothing more
-- Do NOT add examples, context, or details not in the source
-- If a sentence is OCR-damaged or ambiguous, skip it
-- Target: educated high school student reading the source document`}
+  : `EXTRACTIVE SIMPLIFICATION RULES — faithfulness over readability:
+- Use ONLY information EXPLICITLY present in the source text — zero exceptions
+- Do NOT rewrite naturally if it means adding new concepts
+- Do NOT expand ideas — if the source says "X", do not add "such as Y and Z"
+- Do NOT introduce technologies, industries, platforms, or social concepts not in the source
+- Do NOT add online education, remote work, digital payments, social media unless written
+- Simplify the WORDING only — never the information scope
+- If a sentence is OCR-damaged or ambiguous, copy it more simply — do not skip or expand it
+- Shorter and faithful beats longer and hallucinated — always
+- Target: a direct, plain-language compression of what is actually written`}
 
 Before writing your output, ask yourself:
 1. "Is every single claim I am about to write explicitly stated in the source text above?"
@@ -840,16 +844,23 @@ Return ONLY this JSON:
       }
     ];
 
+    // Temperature per stage (ChatGPT recommendation):
+    // OCR repair: 0.0 | Simplification: 0.2 | Translation/Burmese: 0.1
+    const simplifyTemp = targetLang === 'English' ? 0.2 : 0.1;
+    // English gets slightly more fluency freedom (0.2)
+    // Burmese/Thai stays at 0.1 — script accuracy more important than fluency
+
     const groundedRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         max_tokens: 1000,
-        temperature: 0.1,  // Very low — faithfulness over creativity
+        temperature: simplifyTemp,
         messages: groundedMessages
       })
     });
+    console.log('STEP 2+3 — Using temperature:', simplifyTemp, 'for lang:', targetLang);
 
     if (!groundedRes.ok) {
       const error = await groundedRes.json();
@@ -872,6 +883,19 @@ Return ONLY this JSON:
         language: 'Unknown',
         topic: 'Tech'
       };
+    }
+
+    // ── STEP 2.5: Post-process Burmese output — fix over-segmentation ────────
+    // OCR cleanup sometimes splits Burmese syllables with spaces where none should exist
+    // e.g. "အတွေး အမြင် များ" → "အတွေးအမြင်များ"
+    function fixBurmeseSpacing(text) {
+      if (!text || !/[က-႟]/.test(text)) return text;
+      // Remove spaces between Myanmar Unicode characters (syllables should not be space-separated)
+      // But preserve spaces before/after Latin words, numbers, and punctuation
+      return text
+        .replace(/([က-႟ါ-ှ၀-၏])\s+([က-႟])/g, '$1$2')
+        .replace(/([က-႟])\s+([ါ-ှ])/g, '$1$2') // combining marks
+        .trim();
     }
 
     // ── Novel word ratio check — reject output if too many new tokens not in source ──
@@ -949,6 +973,15 @@ Return ONLY this JSON:
     }
 
     let outputText = parsed.text || parsed.simplified || parsed.summary || '';
+
+    // Apply Burmese spacing normalization — fixes over-segmented syllables from OCR cleanup
+    if (targetLang === 'Burmese' && outputText) {
+      const beforeFix = outputText;
+      outputText = fixBurmeseSpacing(outputText);
+      if (beforeFix !== outputText) {
+        console.log('STEP 2.5 — Burmese spacing normalized');
+      }
+    }
 
     // ✅ Garbage guard: if output looks like numbered list or empty, return an error
     // instead of showing garbage to the user
