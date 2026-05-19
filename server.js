@@ -959,5 +959,5 @@ app.post('/api/check-subscription', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`ClearIt server v2.0 on port ${PORT}`);
+  console.log(`ClearIt server v2.1 — Sharp OCR pipeline active on port ${PORT}`);
 });
