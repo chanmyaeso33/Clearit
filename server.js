@@ -505,14 +505,29 @@ app.post('/api/scan', async (req, res) => {
         // .normalize() stretches contrast to full range — fixes washed-out/dark photos
         // .sharpen() improves edge clarity for OCR
         // .threshold(160) converts to pure black/white — best for text recognition
+        // Get image dimensions for upscaling
+        const metadata = await sharp(inputBuffer).metadata();
+        const originalWidth = metadata.width || 1200;
+        const originalHeight = metadata.height || 1600;
+
+        // Upscale to minimum 2400px wide — Burmese OCR improves dramatically with upscaling
+        // Stacked characters and diacritics become distinguishable at higher resolution
+        const targetWidth = Math.max(originalWidth * 2, 2400);
+
         const processedBuffer = await sharp(inputBuffer)
-          .rotate()                  // auto-rotate using EXIF data
-          .grayscale()               // remove color noise
-          .normalize()               // auto-contrast stretch
-          .sharpen({ sigma: 1.5 })   // sharpen text edges
-          .threshold(160)            // binarize: pure black/white
-          .jpeg({ quality: 95 })     // re-encode as JPEG
+          .rotate()                          // auto-rotate using EXIF data
+          .resize({ width: targetWidth,      // 2x upscale — critical for Burmese stacked chars
+                    height: Math.round(originalHeight * (targetWidth / originalWidth)),
+                    fit: 'fill' })
+          .grayscale()                       // remove color noise
+          .normalize()                       // auto-contrast stretch
+          .sharpen({ sigma: 2.0 })           // stronger sharpening at higher res
+          .threshold(170)                    // binarize: pure black/white (170 better for Burmese)
+          .jpeg({ quality: 95 })             // re-encode as JPEG
           .toBuffer();
+
+        console.log('STEP 0 — Upscaled from', originalWidth, 'x', originalHeight,
+                    'to', targetWidth, 'px wide');
 
         processedImageBase64 = processedBuffer.toString('base64');
         console.log('STEP 0 — Preprocessing complete. Original size:', imageBase64.length,
@@ -629,37 +644,51 @@ Start copying the text now — output ONLY the raw characters from the image:`
 
     if (hasNoise) {
       console.log('STEP 1.5 — Running OCR cleanup pass (always on for scan pipeline)...');
+      // STRICT RECONSTRUCTION MODE — preserve, do NOT rewrite
+      // Goal: output must stay as close to the original as physically possible
+      // The model must NOT paraphrase, normalize, improve, or stylistically alter anything
       const cleanupMessages = [
         {
           role: 'system',
-          content: `You are an OCR correction engine for ${imageScript} text.
-Your ONLY job is to fix obvious character-level OCR mistakes.
+          content: `You are a STRICT OCR reconstruction system for ${imageScript} text.
 
-STRICT RULES:
-- Correct obvious typos and broken characters caused by OCR scanning
-- Do NOT infer or invent names, addresses, dates, numbers, or any details
-- Do NOT translate or change the language
-- Do NOT summarize or shorten
-- If a word is ambiguous, preserve it as-is — do NOT guess
-- If marked [?], remove the marker but keep the word if readable, or remove entirely if not
-- Preserve all numbers, dates, names EXACTLY as they appear — do not correct them even if they look wrong
-- Output ONLY the corrected ${imageScript} text. No explanation.`
+Your ONLY job: fix characters that are OBVIOUSLY broken by scanning artifacts.
+
+ABSOLUTE RULES — violation means failure:
+- Preserve EVERY original word exactly unless it has an obvious scan artifact
+- NEVER rewrite sentences — not even slightly
+- NEVER paraphrase or rephrase anything
+- NEVER summarize or shorten
+- NEVER improve style or grammar
+- NEVER normalize unusual phrasing — it may be correct in the source
+- NEVER invent or guess missing words — if uncertain, keep the original exactly
+- If a word looks wrong but you are not 100% certain it is an OCR error, KEEP IT AS-IS
+- Remove [?] markers: keep the word before it if readable, remove entirely if not
+- Preserve ALL numbers, dates, currencies, names EXACTLY as they appear
+- Output must be extremely close to input — only minimal targeted character fixes allowed
+
+You are reconstructing, not rewriting. When in doubt, preserve the original.`
         },
         {
           role: 'user',
-          content: `Correct ONLY obvious character-level OCR errors in this ${imageScript} text.
+          content: `STRICT RECONSTRUCTION TASK:
+Fix ONLY characters with obvious scan artifacts in this ${imageScript} text.
+Every word that is not clearly broken must be kept exactly as written.
 
-CRITICAL — never change these:
-- ALL numbers (e.g. 900, 1000, 10000, 2569, 2570, 265) — copy exactly
-- ALL dates — copy exactly as written, do NOT convert Buddhist Era to Western calendar
-- ALL currency symbols and names (บาท = baht) — keep exactly as written
-- ALL proper names — keep exactly as written
-- Do NOT add any information not present in the original
+DO NOT:
+- Rewrite any sentence
+- Change any word order
+- Add any punctuation not in the original
+- Remove any content
+- Translate anything
+- Improve anything that looks grammatically odd — it may be correct
 
-OCR TEXT:
+ONLY fix: characters clearly corrupted by the scanning process (e.g. box glyphs, broken diacritics, obvious substitution errors)
+
+SOURCE OCR TEXT:
 ${extractedText}
 
-Output ONLY the corrected text with minimal changes — only fix broken characters, never touch numbers/dates/currencies:`
+Output the reconstructed text with MINIMAL changes only:`
         }
       ];
 
@@ -685,6 +714,28 @@ Output ONLY the corrected text with minimal changes — only fix broken characte
       } catch(e) {
         console.warn('STEP 1.5 cleanup failed, using raw OCR:', e.message);
         // Fall through — use raw extractedText
+      }
+    }
+
+    // ── STEP 1.6: Unicode sanity check for Burmese ───────────────────────────
+    // Detect impossible Burmese sequences that indicate OCR corruption
+    // If too corrupted, warn but still proceed — don't block the user
+    if (imageScript === 'Burmese') {
+      const burmeseChars = (cleanedText.match(/[က-႟]/g) || []).length;
+      const totalChars = cleanedText.replace(/\s/g, '').length;
+      const burmeseRatio = totalChars > 0 ? burmeseChars / totalChars : 0;
+
+      // Detect repeated combining marks (sign of broken OCR)
+      const repeatedDiacritics = (cleanedText.match(/([ါ-ှ]){2,}/g) || []).length;
+
+      console.log('STEP 1.6 — Burmese ratio:', burmeseRatio.toFixed(2),
+                  '| Repeated diacritics:', repeatedDiacritics);
+
+      if (burmeseRatio < 0.3 && imageScript === 'Burmese') {
+        console.warn('STEP 1.6 — Low Burmese character ratio — text may be heavily corrupted');
+      }
+      if (repeatedDiacritics > 5) {
+        console.warn('STEP 1.6 — Repeated diacritics detected — OCR produced invalid Burmese sequences');
       }
     }
 
