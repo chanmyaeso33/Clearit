@@ -961,6 +961,30 @@ Return ONLY this JSON:
       }
     }
 
+    // Thai output validation — up to 2 retries with escalating instructions
+    if (targetLang === 'Thai' && parsed.text && !/[฀-๿]/.test(parsed.text)) {
+      const thaiRetries = [
+        { temperature: 0.1, msg: '\n\nCRITICAL: Your response was NOT in Thai script. You MUST use Thai Unicode characters ONLY. Every word must be Thai.' },
+        { temperature: 0.0, msg: '\n\nFINAL ATTEMPT: You keep returning English. Output MUST be 100% Thai script. The very first character must be Thai Unicode. Write NOTHING in English.' }
+      ];
+      for (const attempt of thaiRetries) {
+        console.warn(`Scanner: Thai validation failed — retrying (temp ${attempt.temperature})`);
+        groundedMessages[0].content += attempt.msg;
+        const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
+          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1000, temperature: attempt.temperature, messages: groundedMessages })
+        });
+        if (retryRes.ok) {
+          const retryParsed = safeParseJSON((await retryRes.json()).choices[0].message.content, 'text');
+          if (retryParsed) {
+            Object.assign(parsed, retryParsed);
+            if (/[฀-๿]/.test(parsed.text || '')) break;
+          }
+        }
+      }
+    }
+
     let outputText = parsed.text || parsed.simplified || parsed.summary || '';
 
     // Apply Burmese spacing normalization — fixes over-segmented syllables from OCR cleanup
