@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 
 // ✅ Sharp for image preprocessing before OCR
@@ -153,57 +153,31 @@ function isGarbageOutput(text) {
   return false;
 }
 
-// ✅ Call model with retry and Burmese validation
-async function callModelWithRetry(messages, outputLang, maxRetries = 3) {
-  const groqApiKey = process.env.GROQ_API_KEY;
-  const model = 'meta-llama/llama-4-scout-17b-16e-instruct';
+// ✅ Fix over-segmented Burmese syllables (OCR cleanup sometimes inserts spaces between
+// Myanmar Unicode combining marks and base characters where no space should exist)
+function fixBurmeseSpacing(text) {
+  if (!text || !/[က-႟]/.test(text)) return text;
+  return text
+    .replace(/([က-႟ါ-ှ၀-၏])\s+([က-႟])/g, '$1$2')
+    .replace(/([က-႟])\s+([ါ-ှ])/g, '$1$2')
+    .trim();
+}
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`Attempt ${attempt}/${maxRetries} | Lang: ${outputLang}`);
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqApiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 1500,
-        temperature: 0.3,
-        messages
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || `Groq API error ${response.status}`);
-    }
-
-    const data = await response.json();
-    const raw = data.choices[0].message.content;
-    const fieldName = messages[1]?.content?.includes('"summary"') ? 'summary' : 'simplified';
-    const parsed = safeParseJSON(raw, fieldName);
-
-    if (!parsed) {
-      console.error(`Attempt ${attempt}: JSON parse failed`);
-      if (attempt === maxRetries) return { error: 'JSON parse failed', raw };
-      continue;
-    }
-
-    if (outputLang === 'Burmese') {
-      const outputText = parsed.simplified || parsed.summary || '';
-      if (!isBurmese(outputText)) {
-        console.warn(`Attempt ${attempt}: LANGUAGE FAIL — English returned instead of Burmese`);
-        if (attempt === maxRetries) return parsed;
-        messages[0].content += `\n\n⚠️ RETRY ${attempt}: Your previous response was in English. WRONG. Output MUST be 100% Burmese Unicode (Myanmar script). No English.`;
-        continue;
-      }
-    }
-
-    console.log(`✅ Success on attempt ${attempt}`);
-    return parsed;
-  }
+// ✅ Novel word ratio — fraction of output tokens not present in source
+// Only meaningful when source and output are in the same language/script.
+// Cross-language output will always score ~1.0 (all words are "novel"), so callers
+// must skip this check when imageScript !== targetLang.
+function novelWordRatio(sourceText, outputText) {
+  if (!sourceText || !outputText) return 0;
+  const sourceWords = new Set(
+    sourceText.toLowerCase().replace(/[^\wက-႟฀-๿\s]/g, ' ')
+      .split(/\s+/).filter(w => w.length > 2)
+  );
+  const outputWords = outputText.toLowerCase().replace(/[^\wက-႟฀-๿\s]/g, ' ')
+    .split(/\s+/).filter(w => w.length > 2);
+  if (outputWords.length === 0) return 0;
+  const novelWords = outputWords.filter(w => !sourceWords.has(w));
+  return novelWords.length / outputWords.length;
 }
 
 // ✅ Main endpoint
@@ -699,7 +673,7 @@ Output the reconstructed text with MINIMAL changes only:`
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
             max_tokens: 2000,
-            temperature: 0.1,
+            temperature: 0.0,
             messages: cleanupMessages
           })
         });
@@ -736,6 +710,17 @@ Output the reconstructed text with MINIMAL changes only:`
       }
       if (repeatedDiacritics > 5) {
         console.warn('STEP 1.6 — Repeated diacritics detected — OCR produced invalid Burmese sequences');
+      }
+    }
+
+    // ── STEP 1.7: Normalise Burmese spacing in cleanedText before feeding to LLM ──
+    // OCR cleanup can introduce spaces between Myanmar syllables/combining marks.
+    // Fix this now so the LLM receives valid Burmese Unicode rather than fragmented text.
+    if (imageScript === 'Burmese') {
+      const beforeFix = cleanedText;
+      cleanedText = fixBurmeseSpacing(cleanedText);
+      if (beforeFix !== cleanedText) {
+        console.log('STEP 1.7 — Burmese spacing normalised in cleanedText before LLM');
       }
     }
 
@@ -885,36 +870,16 @@ Return ONLY this JSON:
       };
     }
 
-    // ── STEP 2.5: Post-process Burmese output — fix over-segmentation ────────
-    // OCR cleanup sometimes splits Burmese syllables with spaces where none should exist
-    // e.g. "အတွေး အမြင် များ" → "အတွေးအမြင်များ"
-    function fixBurmeseSpacing(text) {
-      if (!text || !/[က-႟]/.test(text)) return text;
-      // Remove spaces between Myanmar Unicode characters (syllables should not be space-separated)
-      // But preserve spaces before/after Latin words, numbers, and punctuation
-      return text
-        .replace(/([က-႟ါ-ှ၀-၏])\s+([က-႟])/g, '$1$2')
-        .replace(/([က-႟])\s+([ါ-ှ])/g, '$1$2') // combining marks
-        .trim();
+    // Skip cross-language comparisons — every English word is "novel" relative to Burmese/Thai
+    // source chunks, so the ratio is always ~1.0 and triggers a false positive retry.
+    const sameScript = imageScript === targetLang ||
+      (imageScript === 'English' && targetLang === 'English');
+    const novelRatio = sameScript ? novelWordRatio(cleanedText, parsed.text || '') : 0;
+    if (sameScript) {
+      console.log('Novel word ratio:', novelRatio.toFixed(2), '(>0.5 = likely hallucination)');
+    } else {
+      console.log('Novel word ratio: skipped (cross-language:', imageScript, '→', targetLang, ')');
     }
-
-    // ── Novel word ratio check — reject output if too many new tokens not in source ──
-    // Prevents topic-completing hallucinations (e.g. "technology revolution" from Burmese text)
-    function novelWordRatio(sourceText, outputText) {
-      if (!sourceText || !outputText) return 0;
-      const sourceWords = new Set(
-        sourceText.toLowerCase().replace(/[^\w\u1000-\u109F\u0E00-\u0E7F\s]/g, ' ')
-          .split(/\s+/).filter(w => w.length > 2)
-      );
-      const outputWords = outputText.toLowerCase().replace(/[^\w\u1000-\u109F\u0E00-\u0E7F\s]/g, ' ')
-        .split(/\s+/).filter(w => w.length > 2);
-      if (outputWords.length === 0) return 0;
-      const novelWords = outputWords.filter(w => !sourceWords.has(w));
-      return novelWords.length / outputWords.length;
-    }
-
-    const novelRatio = novelWordRatio(cleanedText, parsed.text || '');
-    console.log('Novel word ratio:', novelRatio.toFixed(2), '(>0.5 = likely hallucination)');
 
     if (novelRatio > 0.5 && (parsed.text || '').length > 30) {
       console.warn('HALLUCINATION DETECTED: novel word ratio', novelRatio.toFixed(2), '— retrying with stricter prompt');
