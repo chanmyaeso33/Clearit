@@ -402,11 +402,11 @@ Return ONLY this JSON:
         { temperature: 0.0, msg: '\n\nFINAL ATTEMPT: You keep returning English. Output MUST be 100% Burmese Myanmar Unicode script. The very first character must be Myanmar script. Write NOTHING in English.' }
       ];
       for (const attempt of burmeseRetries) {
-        console.warn(Burmese validation failed — retrying (temp ));
+        console.warn(`Burmese validation failed — retrying (temp ${attempt.temperature})`);
         simplifyMessages[0].content += attempt.msg;
         const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
           body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 2000, temperature: attempt.temperature, messages: simplifyMessages })
         });
         if (retryRes.ok) {
@@ -426,11 +426,11 @@ Return ONLY this JSON:
         { temperature: 0.0, msg: '\n\nFINAL ATTEMPT: You keep returning English. Output MUST be 100% Thai script. The very first character must be Thai Unicode. Write NOTHING in English.' }
       ];
       for (const attempt of thaiRetries) {
-        console.warn(Thai validation failed — retrying (temp ));
+        console.warn(`Thai validation failed — retrying (temp ${attempt.temperature})`);
         simplifyMessages[0].content += attempt.msg;
         const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
           body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 2000, temperature: attempt.temperature, messages: simplifyMessages })
         });
         if (retryRes.ok) {
@@ -989,11 +989,11 @@ Return ONLY this JSON:
         { temperature: 0.0, msg: '\n\nFINAL ATTEMPT: You keep returning English. Output MUST be 100% Burmese Myanmar Unicode script. The very first character must be Myanmar script. Write NOTHING in English.' }
       ];
       for (const attempt of burmeseRetries) {
-        console.warn(Scanner: Burmese validation failed — retrying (temp ));
+        console.warn(`Scanner: Burmese validation failed — retrying (temp ${attempt.temperature})`);
         groundedMessages[0].content += attempt.msg;
         const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
           body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1000, temperature: attempt.temperature, messages: groundedMessages })
         });
         if (retryRes.ok) {
