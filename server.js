@@ -157,8 +157,9 @@ function isGarbageOutput(text) {
 // Myanmar Unicode combining marks and base characters where no space should exist)
 function fixBurmeseSpacing(text) {
   if (!text || !/[က-႟]/.test(text)) return text;
+  // Only remove space between a base char and a following combining/dependent mark
+  // (U+102B–U+103E = vowel signs, stacked consonants). Never remove word-boundary spaces.
   return text
-    .replace(/([က-႟ါ-ှ၀-၏])\s+([က-႟])/g, '$1$2')
     .replace(/([က-႟])\s+([ါ-ှ])/g, '$1$2')
     .trim();
 }
@@ -863,9 +864,10 @@ ${isSummarize
 - Do NOT add causal explanations unless the source explicitly states the cause
 - Do NOT add socioeconomic conclusions not stated in the source
 - Preserve all names, numbers, and facts exactly as written
-- 2-4 sentences maximum — brevity and accuracy over completeness
+- Cover ALL key points from the source — do not drop entire sentences worth of content
 - If something is unclear from OCR, leave it out rather than guess`
   : `EXTRACTIVE SIMPLIFICATION RULES — faithfulness over readability:
+- COVER EVERY SENTENCE: go through the source text sentence by sentence and simplify each one — do NOT skip any sentence unless it is unreadable OCR garbage
 - Use ONLY information EXPLICITLY present in the source text — zero exceptions
 - Do NOT rewrite naturally if it means adding new concepts
 - Do NOT expand ideas — if the source says "X", do not add "such as Y and Z"
@@ -873,8 +875,8 @@ ${isSummarize
 - Do NOT add online education, remote work, digital payments, social media unless written
 - Simplify the WORDING only — never the information scope
 - If a sentence is OCR-damaged or ambiguous, copy it more simply — do not skip or expand it
-- Shorter and faithful beats longer and hallucinated — always
-- Target: a direct, plain-language compression of what is actually written`}
+- A complete faithful output covering all sentences beats a short partial one
+- Target: a direct, plain-language compression of EVERY sentence in the source`}
 
 Before writing your output, ask yourself:
 1. "Is every single claim I am about to write explicitly stated in the source text above?"
@@ -1051,7 +1053,8 @@ Return ONLY this JSON:
     }
 
     const topic = parsed.topic || 'Tech';
-    const inputLang = parsed.lang || parsed.language || imageScript || 'Unknown';
+    // Always report the IMAGE script as the source language — model may return target lang otherwise
+    const inputLang = imageScript || parsed.lang || parsed.language || 'Unknown';
 
     const themeMap = {
       'Tech': { bg: '#061420', surface: '#0d1f2d', accent: '#00d4ff' },
