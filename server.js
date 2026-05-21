@@ -163,6 +163,33 @@ function fixBurmeseSpacing(text) {
     .trim();
 }
 
+// Call Google Cloud Vision API for OCR — used when GOOGLE_VISION_KEY is set
+async function extractTextWithGoogleVision(base64Image, apiKey) {
+  const visionRes = await fetch(
+    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { content: base64Image },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
+        }]
+      })
+    }
+  );
+  if (!visionRes.ok) {
+    const err = await visionRes.json();
+    throw new Error(err.error?.message || `Vision API error ${visionRes.status}`);
+  }
+  const visionData = await visionRes.json();
+  const annotation = visionData.responses?.[0];
+  const text = annotation?.fullTextAnnotation?.text
+             || annotation?.textAnnotations?.[0]?.description
+             || '';
+  return text.trim();
+}
+
 // ✅ Novel word ratio — fraction of output tokens not present in source
 // Only meaningful when source and output are in the same language/script.
 // Cross-language output will always score ~1.0 (all words are "novel"), so callers
@@ -589,25 +616,43 @@ Start copying the text now — output ONLY the raw characters from the image:`
       }
     ];
 
-    const extractRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        max_tokens: 2000,        // Increased — full text may be long
-        temperature: 0.0,        // Zero temperature — exact copying, no creativity at all
-        messages: extractMessages
-      })
-    });
+    // ── STEP 1: OCR backend selection ────────────────────────────────────────
+    const googleVisionKey = process.env.GOOGLE_VISION_KEY;
+    let extractedText;
 
-    if (!extractRes.ok) {
-      const error = await extractRes.json();
-      return res.status(extractRes.status).json({ error: error.error?.message || 'OCR step failed' });
+    if (googleVisionKey) {
+      console.log('STEP 1 — Using Google Cloud Vision OCR');
+      try {
+        extractedText = await extractTextWithGoogleVision(processedImageBase64, googleVisionKey);
+        console.log('STEP 1 (Vision) — Extracted:', extractedText.substring(0, 600));
+      } catch (visionErr) {
+        console.warn('STEP 1 — Google Vision failed, falling back to llama-4-scout:', visionErr.message);
+        extractedText = null;
+      }
     }
 
-    const extractData = await extractRes.json();
-    const extractedText = extractData.choices[0].message.content.trim();
-    console.log('STEP 1 — Extracted text:', extractedText.substring(0, 600));
+    if (!googleVisionKey || !extractedText) {
+      console.log('STEP 1 — Using llama-4-scout OCR');
+      const extractRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          max_tokens: 2000,
+          temperature: 0.0,
+          messages: extractMessages
+        })
+      });
+
+      if (!extractRes.ok) {
+        const error = await extractRes.json();
+        return res.status(extractRes.status).json({ error: error.error?.message || 'OCR step failed' });
+      }
+
+      const extractData = await extractRes.json();
+      extractedText = extractData.choices[0].message.content.trim();
+      console.log('STEP 1 (llama-4-scout) — Extracted:', extractedText.substring(0, 600));
+    }
 
     // Validate: for Burmese output lang, check if extracted text actually contains Burmese
     const hasBurmese = /[\u1000-\u109F]/.test(extractedText);
