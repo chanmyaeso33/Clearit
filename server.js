@@ -513,6 +513,7 @@ app.post('/api/scan', async (req, res) => {
     // This is the single biggest quality improvement for real-world photos.
     // Fixes: rotation, low contrast, blur, wrinkled paper, dark photos.
     let processedImageBase64 = imageBase64; // fallback to original if sharp fails
+    let processedSharpBuffer = null; // kept for two-pass OCR crop
 
     if (sharp) {
       try {
@@ -548,6 +549,7 @@ app.post('/api/scan', async (req, res) => {
                     'to', targetWidth, 'px wide');
 
         processedImageBase64 = processedBuffer.toString('base64');
+        processedSharpBuffer = processedBuffer; // save for two-pass crop
         console.log('STEP 0 — Preprocessing complete. Original size:', imageBase64.length,
                     '→ Processed size:', processedImageBase64.length);
       } catch(preprocessErr) {
@@ -636,26 +638,61 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
     }
 
     if (!googleVisionKey || !extractedText) {
-      console.log('STEP 1 — Using llama-4-scout OCR');
-      const extractRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-        body: JSON.stringify({
-          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-          max_tokens: 3000,
-          temperature: 0.0,
-          messages: extractMessages
-        })
-      });
+      console.log('STEP 1 — Using llama-4-scout OCR (two-pass crop)');
 
-      if (!extractRes.ok) {
-        const error = await extractRes.json();
-        return res.status(extractRes.status).json({ error: error.error?.message || 'OCR step failed' });
+      const ocrSystemPrompt = extractMessages[0].content;
+      const ocrUserText = extractMessages[1].content[1].text;
+
+      const buildOcrMessages = (imgBase64) => [
+        { role: 'system', content: ocrSystemPrompt },
+        { role: 'user', content: [
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imgBase64}` } },
+          { type: 'text', text: ocrUserText }
+        ]}
+      ];
+
+      const runOcr = async (imgBase64, label) => {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
+          body: JSON.stringify({
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            max_tokens: 2000,
+            temperature: 0.0,
+            messages: buildOcrMessages(imgBase64)
+          })
+        });
+        if (!res.ok) { console.warn(`STEP 1 ${label} failed:`, res.status); return ''; }
+        const data = await res.json();
+        const text = data.choices[0].message.content.trim();
+        console.log(`STEP 1 ${label} —`, text.substring(0, 300));
+        return text;
+      };
+
+      if (sharp && processedSharpBuffer) {
+        // Two-pass: top half then bottom half
+        const meta = await sharp(processedSharpBuffer).metadata();
+        const w = meta.width, h = meta.height, halfH = Math.floor(h / 2);
+
+        const topBase64 = (await sharp(processedSharpBuffer)
+          .extract({ left: 0, top: 0, width: w, height: halfH })
+          .jpeg({ quality: 95 }).toBuffer()).toString('base64');
+
+        const botBase64 = (await sharp(processedSharpBuffer)
+          .extract({ left: 0, top: halfH, width: w, height: h - halfH })
+          .jpeg({ quality: 95 }).toBuffer()).toString('base64');
+
+        const [topText, botText] = await Promise.all([
+          runOcr(topBase64, '(top half)'),
+          runOcr(botBase64, '(bottom half)')
+        ]);
+
+        extractedText = [topText, botText].filter(Boolean).join('\n\n');
+        console.log('STEP 1 — Two-pass merge complete, total chars:', extractedText.length);
+      } else {
+        // Fallback: single pass on full image (no sharp buffer available)
+        extractedText = await runOcr(processedImageBase64, '(single-pass)');
       }
-
-      const extractData = await extractRes.json();
-      extractedText = extractData.choices[0].message.content.trim();
-      console.log('STEP 1 (llama-4-scout) — Extracted:', extractedText.substring(0, 600));
     }
 
     // Validate: for Burmese output lang, check if extracted text actually contains Burmese
