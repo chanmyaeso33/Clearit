@@ -670,29 +670,43 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
       };
 
       if (sharp && processedSharpBuffer) {
-        // Two-pass: top half then bottom half with 5% overlap and 2x upscale per crop
-        // Overlap avoids cutting words at the boundary; upscale makes glyphs larger for the vision model
+        // Two-pass: top (2x upscale) + bottom (3x upscale) with 5% overlap
+        // Bottom gets extra upscale because it tends to have more OCR noise
+        // Overlap gives the bottom crop sentence context across the boundary
         const meta = await sharp(processedSharpBuffer).metadata();
         const w = meta.width, h = meta.height;
         const halfH = Math.floor(h / 2);
         const overlapH = Math.floor(h * 0.05); // 5% overlap
-        const cropW = w * 2; // 2x upscale per crop
 
         const topBase64 = (await sharp(processedSharpBuffer)
           .extract({ left: 0, top: 0, width: w, height: halfH + overlapH })
-          .resize({ width: cropW })
+          .resize({ width: w * 2 })
           .jpeg({ quality: 95 }).toBuffer()).toString('base64');
 
         const botBase64 = (await sharp(processedSharpBuffer)
           .extract({ left: 0, top: halfH - overlapH, width: w, height: h - halfH + overlapH })
-          .resize({ width: cropW })
+          .resize({ width: w * 3 })
           .jpeg({ quality: 95 }).toBuffer()).toString('base64');
 
         // Sequential to avoid Groq rate limits
         const topText = await runOcr(topBase64, '(top half)');
         const botText = await runOcr(botBase64, '(bottom half)');
 
-        extractedText = [topText, botText].filter(Boolean).join('\n\n');
+        // Dedup: the overlap causes the same line to appear at the tail of top and head of bot.
+        // Keep bot's version (higher upscale = more accurate) and drop the top's duplicate tail.
+        const deduplicateOverlap = (top, bot) => {
+          const topLines = top.split('\n').map(s => s.trim()).filter(Boolean);
+          const botLines = bot.split('\n').map(s => s.trim()).filter(Boolean);
+          const pfx = (s) => s.replace(/\s+/g, ' ').substring(0, 12);
+          const botPfxSet = new Set(botLines.slice(0, 4).map(pfx).filter(p => p.length >= 6));
+          let cutAt = topLines.length;
+          for (let i = topLines.length - 1; i >= Math.max(0, topLines.length - 4); i--) {
+            if (botPfxSet.has(pfx(topLines[i]))) cutAt = i;
+          }
+          return topLines.slice(0, cutAt).join('\n') + '\n\n' + botLines.join('\n');
+        };
+
+        extractedText = deduplicateOverlap(topText, botText);
         console.log('STEP 1 — Two-pass merge complete, total chars:', extractedText.length);
       } else {
         // Fallback: single pass on full image (no sharp buffer available)
@@ -1147,7 +1161,7 @@ Return ONLY this JSON:
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ClearIt API v2.3 running ✅' });
+  res.json({ status: 'ClearIt API v2.4 running ✅' });
 });
 
 // ✅ STRIPE — Create checkout session (kept but payment gate disabled on frontend)
