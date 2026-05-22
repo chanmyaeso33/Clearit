@@ -602,7 +602,9 @@ Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the
           },
           {
             type: 'text',
-            text: `Carefully read every character visible in this image and copy it exactly.
+            text: `Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
+
+IMPORTANT: Do NOT stop after the first paragraph or first few lines. Read and copy ALL text in the image, including text at the bottom.
 
 Your output must:
 1. Use the SAME script as the image (Myanmar Unicode for Burmese, Thai Unicode for Thai, etc.)
@@ -610,8 +612,9 @@ Your output must:
 3. NOT replace any non-English characters with English/Latin equivalents
 4. Mark any unclear word with [?] immediately after it
 5. Mark any unreadable paragraph as [unreadable section]
+6. Continue reading until the absolute last character in the image — do not stop early
 
-Start copying the text now — output ONLY the raw characters from the image:`
+Start at the top-left and read to the bottom-right. Output ONLY the raw characters from the image:`
           }
         ]
       }
@@ -639,7 +642,7 @@ Start copying the text now — output ONLY the raw characters from the image:`
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
         body: JSON.stringify({
           model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-          max_tokens: 2000,
+          max_tokens: 3000,
           temperature: 0.0,
           messages: extractMessages
         })
@@ -702,6 +705,7 @@ ABSOLUTE RULES — violation means failure:
 - Remove [?] markers: keep the word before it if readable, remove entirely if not
 - Preserve ALL numbers, dates, currencies, names EXACTLY as they appear
 - Output must be extremely close to input — only minimal targeted character fixes allowed
+- BURMESE SPACING RULE (critical): Burmese/Myanmar script uses spaces between word groups. PRESERVE ALL SPACES between words. Only remove a space if it occurs WITHIN a syllable cluster — between a base consonant and a following combining/dependent mark (like ာ ိ ီ ု ူ ဲ ့ ်). Never merge whole words together.
 
 You are reconstructing, not rewriting. When in doubt, preserve the original.`
         },
@@ -1101,7 +1105,7 @@ Return ONLY this JSON:
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ClearIt API v2.0 running ✅' });
+  res.json({ status: 'ClearIt API v2.1 running ✅' });
 });
 
 // ✅ STRIPE — Create checkout session (kept but payment gate disabled on frontend)
