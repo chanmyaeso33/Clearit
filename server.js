@@ -670,22 +670,27 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
       };
 
       if (sharp && processedSharpBuffer) {
-        // Two-pass: top half then bottom half
+        // Two-pass: top half then bottom half with 5% overlap and 2x upscale per crop
+        // Overlap avoids cutting words at the boundary; upscale makes glyphs larger for the vision model
         const meta = await sharp(processedSharpBuffer).metadata();
-        const w = meta.width, h = meta.height, halfH = Math.floor(h / 2);
+        const w = meta.width, h = meta.height;
+        const halfH = Math.floor(h / 2);
+        const overlapH = Math.floor(h * 0.05); // 5% overlap
+        const cropW = w * 2; // 2x upscale per crop
 
         const topBase64 = (await sharp(processedSharpBuffer)
-          .extract({ left: 0, top: 0, width: w, height: halfH })
+          .extract({ left: 0, top: 0, width: w, height: halfH + overlapH })
+          .resize({ width: cropW })
           .jpeg({ quality: 95 }).toBuffer()).toString('base64');
 
         const botBase64 = (await sharp(processedSharpBuffer)
-          .extract({ left: 0, top: halfH, width: w, height: h - halfH })
+          .extract({ left: 0, top: halfH - overlapH, width: w, height: h - halfH + overlapH })
+          .resize({ width: cropW })
           .jpeg({ quality: 95 }).toBuffer()).toString('base64');
 
-        const [topText, botText] = await Promise.all([
-          runOcr(topBase64, '(top half)'),
-          runOcr(botBase64, '(bottom half)')
-        ]);
+        // Sequential to avoid Groq rate limits
+        const topText = await runOcr(topBase64, '(top half)');
+        const botText = await runOcr(botBase64, '(bottom half)');
 
         extractedText = [topText, botText].filter(Boolean).join('\n\n');
         console.log('STEP 1 — Two-pass merge complete, total chars:', extractedText.length);
@@ -1142,7 +1147,7 @@ Return ONLY this JSON:
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ClearIt API v2.2 running ✅' });
+  res.json({ status: 'ClearIt API v2.3 running ✅' });
 });
 
 // ✅ STRIPE — Create checkout session (kept but payment gate disabled on frontend)
