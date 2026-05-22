@@ -1142,7 +1142,7 @@ Return ONLY this JSON:
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ClearIt API v2.1 running ✅' });
+  res.json({ status: 'ClearIt API v2.2 running ✅' });
 });
 
 // ✅ STRIPE — Create checkout session (kept but payment gate disabled on frontend)
