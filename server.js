@@ -193,8 +193,11 @@ function applyBurmeseCorrections(text) {
     ['လုငယ်',           'လူငယ်'],             // youth — ု/ူ confusion
     ['နိုင်ငါ',          'နိုင်ငံ'],            // country — ငါ/ငံ substitution
     ['တိုတက်မှု',        'တိုးတက်မှု'],        // progress — missing း
-    ['ဘဝသာရပ်',         'ဘာသာရပ်'],          // subjects/disciplines — ဝ/ာ confusion
-    ['နားပညာ',          'နည်းပညာ'],          // technology/method — နား/နည်း substitution
+    ['ဘဝသာရပ်',         'ဘာသာရပ်'],          // subjects — ဝ/ာ confusion (letter wa)
+    ['ဘ၀သာရပ်',         'ဘာသာရပ်'],          // subjects — ဝ/ာ confusion (Myanmar digit zero)
+    ['နားပညာ',          'နည်းပညာ'],          // technology — နား/နည်း substitution
+    ['စာရမ်းများ',       'ဆရာမများ'],          // female teachers — syllable substitution
+    ['စာရမ်း',           'ဆရာမ'],             // female teacher (singular)
   ];
 
   let result = text;
