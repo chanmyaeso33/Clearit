@@ -198,6 +198,11 @@ function applyBurmeseCorrections(text) {
     ['နားပညာ',          'နည်းပညာ'],          // technology — နား/နည်း substitution
     ['စာရမ်းများ',       'ဆရာမများ'],          // female teachers — syllable substitution
     ['စာရမ်း',           'ဆရာမ'],             // female teacher (singular)
+    // ဖွံ့ဖြိုးတိုးတက်မှု (development/progress) — ဖွံ့ corrupts to ပုံ, တိုးတက်မှု corrupts to တိုက် မူ
+    ['ပုံဖြိုးတိုက် မူမူများ',  'ဖွံ့ဖြိုးတိုးတက်မှုများ'],
+    ['ပုံဖြိုးတိုက် မူများ',    'ဖွံ့ဖြိုးတိုးတက်မှုများ'],
+    ['ပုံဖြိုးတိုးတက်မှုများ',  'ဖွံ့ဖြိုးတိုးတက်မှုများ'],
+    ['ပုံဖြိုးတိုးတက်မှု',      'ဖွံ့ဖြိုးတိုးတက်မှု'],
   ];
 
   let result = text;
