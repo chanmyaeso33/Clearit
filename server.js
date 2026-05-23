@@ -593,6 +593,24 @@ app.post('/api/scan', async (req, res) => {
       console.log('STEP 0.5 — Tesseract not available, skipping pre-OCR');
     }
 
+    // Quality-gate the Tesseract reference before injecting into the LLM prompt.
+    // eng-only Tesseract on Burmese/Thai images produces garbled Latin that confuses
+    // the vision LLM and causes early stopping. Skip the reference if it looks garbled:
+    // avg word length < 3 or > 40% of tokens are single chars / pure symbols.
+    const usableTesseractText = (() => {
+      if (!tesseractText) return null;
+      const words = tesseractText.split(/\s+/).filter(w => w.length > 0);
+      if (words.length < 5) return null;
+      const avgLen = words.reduce((s, w) => s + w.length, 0) / words.length;
+      const junkRatio = words.filter(w => w.length <= 1 || /^[^a-zA-Z0-9]+$/.test(w)).length / words.length;
+      if (avgLen < 3 || junkRatio > 0.4) {
+        console.log('STEP 0.5 — Tesseract reference looks garbled (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%) — skipping injection');
+        return null;
+      }
+      console.log('STEP 0.5 — Tesseract reference usable (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%)');
+      return tesseractText;
+    })();
+
     // ── STEP 1: Extract raw text from the image (vision model) ──────────────
     // Goal: ONLY read what is physically visible. No interpretation. No summary.
     // Script-aware: detect dominant script in output language selection.
@@ -637,8 +655,8 @@ Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the
           },
           {
             type: 'text',
-            text: `${tesseractText ? `TESSERACT PRE-OCR REFERENCE (fast first-pass — use as anchor):
-${tesseractText}
+            text: `${usableTesseractText ? `TESSERACT PRE-OCR REFERENCE (fast first-pass — use as anchor):
+${usableTesseractText}
 
 ⚠ This reference may have errors for non-Latin scripts (Burmese, Thai). Trust your visual read of the image for those characters. Use this mainly to anchor numbers, dates, and Latin words.
 
