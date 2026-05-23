@@ -911,6 +911,8 @@ LINE COUNT RULE: Your output must have exactly the same number of lines as the i
 
 CHARACTER COUNT RULE: Your output character count must be within 5% of the input character count. Large differences mean you rewrote instead of repaired.
 
+NO NOTES OR COMMENTS: Do NOT add any note, explanation, comment, or annotation about what you changed or why. Output ONLY the corrected text — nothing else.
+
 If you are not 100% certain a character is a physical OCR artifact, COPY IT EXACTLY.
 When in doubt: copy. Do not repair. Do not improve.`
         },
@@ -948,13 +950,17 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
             // Diff guard: if the model changed > 15% of characters, it rewrote instead of repaired.
             // Revert to raw OCR output — over-correction is worse than OCR noise.
             const inputLen = extractedText.replace(/\s/g, '').length;
+            const cleanedLen = cleaned.replace(/\s/g, '').length;
             const changedChars = [...extractedText].filter((c, i) => c !== (cleaned[i] || '')).length;
             const changeRatio = inputLen > 0 ? changedChars / inputLen : 0;
+            const lengthRatio = inputLen > 0 ? cleanedLen / inputLen : 1;
             if (changeRatio > 0.08) {
               console.warn('STEP 1.5 — Cleanup changed', (changeRatio * 100).toFixed(0) + '% of chars (> 8%) — reverting to raw OCR to avoid over-correction');
+            } else if (lengthRatio > 1.10) {
+              console.warn('STEP 1.5 — Cleanup output is', (lengthRatio * 100).toFixed(0) + '% of input length (> 110%) — likely added notes/content, reverting');
             } else {
               cleanedText = cleaned;
-              console.log('STEP 1.5 — Cleanup complete (changed', (changeRatio * 100).toFixed(0) + '%):', cleanedText.substring(0, 200));
+              console.log('STEP 1.5 — Cleanup complete (changed', (changeRatio * 100).toFixed(0) + '%, length', (lengthRatio * 100).toFixed(0) + '%):', cleanedText.substring(0, 200));
             }
           }
         }
