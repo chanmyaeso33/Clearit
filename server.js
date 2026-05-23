@@ -689,21 +689,49 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
         ]}
       ];
 
-      const runOcr = async (imgBase64, label) => {
+      const runOcr = async (imgBase64, label, extraBase64 = null) => {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
           body: JSON.stringify({
             model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-            max_tokens: 2000,
+            max_tokens: 4000,
             temperature: 0.0,
             messages: buildOcrMessages(imgBase64)
           })
         });
         if (!res.ok) { console.warn(`STEP 1 ${label} failed:`, res.status); return ''; }
         const data = await res.json();
-        const text = data.choices[0].message.content.trim();
-        console.log(`STEP 1 ${label} —`, text.substring(0, 300));
+        const choice = data.choices[0];
+        let text = choice.message.content.trim();
+        const finishReason = choice.finish_reason;
+        console.log(`STEP 1 ${label} [finish: ${finishReason}] —`, text.substring(0, 300));
+
+        // If output was cut mid-text and we have a tail crop, run a continuation pass
+        if (finishReason === 'length' && extraBase64) {
+          console.warn(`STEP 1 ${label} — TRUNCATED — running tail-crop continuation pass`);
+          const tailRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
+            body: JSON.stringify({
+              model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+              max_tokens: 2000,
+              temperature: 0.0,
+              messages: buildOcrMessages(extraBase64)
+            })
+          });
+          if (tailRes.ok) {
+            const tailData = await tailRes.json();
+            const tailText = tailData.choices[0].message.content.trim();
+            if (tailText && tailText.length > 10) {
+              text = text + '\n' + tailText;
+              console.log(`STEP 1 ${label} tail-crop added`, tailText.length, 'chars');
+            }
+          }
+        } else if (finishReason === 'length') {
+          console.warn(`STEP 1 ${label} — TRUNCATED (hit max_tokens). Text may be incomplete.`);
+        }
+
         return text;
       };
 
@@ -726,9 +754,15 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
           .resize({ width: w * 3 })
           .jpeg({ quality: 95 }).toBuffer()).toString('base64');
 
+        // Tail crop: bottom 30% of original — used as continuation if bottom OCR is truncated
+        const tailBase64 = (await sharp(processedSharpBuffer)
+          .extract({ left: 0, top: Math.floor(h * 0.70), width: w, height: Math.floor(h * 0.30) })
+          .resize({ width: w * 3 })
+          .jpeg({ quality: 95 }).toBuffer()).toString('base64');
+
         // Sequential to avoid Groq rate limits
         const topText = await runOcr(topBase64, '(top half)');
-        const botText = await runOcr(botBase64, '(bottom half)');
+        const botText = await runOcr(botBase64, '(bottom half)', tailBase64);
 
         // Dedup: the overlap causes the same line to appear at the tail of top and head of bot.
         // Keep bot's version (higher upscale = more accurate) and drop the top's duplicate tail.
