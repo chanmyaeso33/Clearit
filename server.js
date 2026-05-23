@@ -11,6 +11,14 @@ try {
   sharp = null;
 }
 
+let Tesseract;
+try {
+  Tesseract = require('tesseract.js');
+} catch(e) {
+  console.warn('Tesseract.js not available — pre-OCR disabled. Run: npm install tesseract.js');
+  Tesseract = null;
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -560,6 +568,31 @@ app.post('/api/scan', async (req, res) => {
       console.log('STEP 0 — Sharp not available, skipping preprocessing');
     }
 
+    // ── STEP 0.5: Tesseract pre-OCR — character-level anchor ─────────────────
+    // Strong for numbers, dates, Latin/English characters mixed into any document.
+    // Weak for Burmese/Thai scripts — vision LLM corrects those in Step 1.
+    // Result is injected into the Step 1 prompt so the LLM can anchor its output.
+    let tesseractText = null;
+    if (Tesseract) {
+      try {
+        const { data: { text } } = await Tesseract.recognize(
+          Buffer.from(processedImageBase64, 'base64'),
+          'eng',
+          { logger: () => {} }
+        );
+        if (text && text.trim().length > 10) {
+          tesseractText = text.trim();
+          console.log('STEP 0.5 — Tesseract pre-OCR:', tesseractText.substring(0, 300));
+        } else {
+          console.log('STEP 0.5 — Tesseract returned insufficient text, skipping reference');
+        }
+      } catch (tessErr) {
+        console.warn('STEP 0.5 — Tesseract failed:', tessErr.message);
+      }
+    } else {
+      console.log('STEP 0.5 — Tesseract not available, skipping pre-OCR');
+    }
+
     // ── STEP 1: Extract raw text from the image (vision model) ──────────────
     // Goal: ONLY read what is physically visible. No interpretation. No summary.
     // Script-aware: detect dominant script in output language selection.
@@ -604,7 +637,12 @@ Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the
           },
           {
             type: 'text',
-            text: `Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
+            text: `${tesseractText ? `TESSERACT PRE-OCR REFERENCE (fast first-pass — use as anchor):
+${tesseractText}
+
+⚠ This reference may have errors for non-Latin scripts (Burmese, Thai). Trust your visual read of the image for those characters. Use this mainly to anchor numbers, dates, and Latin words.
+
+` : ''}Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
 
 IMPORTANT: Do NOT stop after the first paragraph or first few lines. Read and copy ALL text in the image, including text at the bottom.
 
