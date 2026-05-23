@@ -213,9 +213,13 @@ function applyBurmeseCorrections(text) {
   // Regex fixes — catch ဖွံ့ဖြိုးတိုးတက်မှု fragment corruption where the prefix
   // varies unpredictably but the ဖြိုးတိုက် / ဖရီးတိုက် fragment is distinctive.
   // Also consumes the junk suffix (မူများ, မှများ) that replaces တက်မှု.
+  // Non-capturing group covers three suffix patterns:
+  //   \s+မ[ူှ]\S* = spaced junk suffix (မူများ, မှများ)
+  //   မှုများ      = correct suffix attached directly (တိုက်မှုများ)
+  //   မှု          = singular correct suffix attached directly
   result = result
-    .replace(/ဖြိုးတိုက်(\s+မ[ူှ]\S*)?/g, 'ဖြိုးတိုးတက်မှုများ')  // ဖြ variant
-    .replace(/ဖရီးတိုက်(\s+မ[ူှ]\S*)?/g,  'ဖြိုးတိုးတက်မှုများ'); // ဖြ→ဖရ confusion
+    .replace(/ဖြိုးတိုက်(?:\s+မ[ူှ]\S*|မှုများ|မှု)?/g, 'ဖြိုးတိုးတက်မှုများ')  // ဖြ variant
+    .replace(/ဖရီးတိုက်(?:\s+မ[ူှ]\S*|မှုများ|မှု)?/g,  'ဖြိုးတိုးတက်မှုများ'); // ဖြ→ဖရ confusion
 
   return result;
 }
