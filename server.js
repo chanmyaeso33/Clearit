@@ -193,6 +193,8 @@ function applyBurmeseCorrections(text) {
     ['လုငယ်',           'လူငယ်'],             // youth — ု/ူ confusion
     ['နိုင်ငါ',          'နိုင်ငံ'],            // country — ငါ/ငံ substitution
     ['တိုတက်မှု',        'တိုးတက်မှု'],        // progress — missing း
+    ['ဘဝသာရပ်',         'ဘာသာရပ်'],          // subjects/disciplines — ဝ/ာ confusion
+    ['နားပညာ',          'နည်းပညာ'],          // technology/method — နား/နည်း substitution
   ];
 
   let result = text;
@@ -928,8 +930,8 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
             const inputLen = extractedText.replace(/\s/g, '').length;
             const changedChars = [...extractedText].filter((c, i) => c !== (cleaned[i] || '')).length;
             const changeRatio = inputLen > 0 ? changedChars / inputLen : 0;
-            if (changeRatio > 0.15) {
-              console.warn('STEP 1.5 — Cleanup changed', (changeRatio * 100).toFixed(0) + '% of chars (> 15%) — reverting to raw OCR to avoid over-correction');
+            if (changeRatio > 0.08) {
+              console.warn('STEP 1.5 — Cleanup changed', (changeRatio * 100).toFixed(0) + '% of chars (> 8%) — reverting to raw OCR to avoid over-correction');
             } else {
               cleanedText = cleaned;
               console.log('STEP 1.5 — Cleanup complete (changed', (changeRatio * 100).toFixed(0) + '%):', cleanedText.substring(0, 200));
