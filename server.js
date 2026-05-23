@@ -209,6 +209,14 @@ function applyBurmeseCorrections(text) {
   for (const [wrong, right] of fixes) {
     result = result.split(wrong).join(right);
   }
+
+  // Regex fixes — catch ဖွံ့ဖြိုးတိုးတက်မှု fragment corruption where the prefix
+  // varies unpredictably but the ဖြိုးတိုက် / ဖရီးတိုက် fragment is distinctive.
+  // Also consumes the junk suffix (မူများ, မှများ) that replaces တက်မှု.
+  result = result
+    .replace(/ဖြိုးတိုက်(\s+မ[ူှ]\S*)?/g, 'ဖြိုးတိုးတက်မှုများ')  // ဖြ variant
+    .replace(/ဖရီးတိုက်(\s+မ[ူှ]\S*)?/g,  'ဖြိုးတိုးတက်မှုများ'); // ဖြ→ဖရ confusion
+
   return result;
 }
 
