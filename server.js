@@ -172,6 +172,36 @@ function fixBurmeseSpacing(text) {
     .trim();
 }
 
+// ✅ Deterministic Burmese OCR correction dictionary
+// Covers high-frequency words with well-known OCR substitution patterns.
+// Only high-confidence whole-word fixes — no guessing, no stem changes.
+function applyBurmeseCorrections(text) {
+  if (!text || !/[က-႟]/.test(text)) return text;
+
+  // Each entry: [OCR output, correct form]
+  // Ordered longest-first to avoid partial-match shadowing
+  const fixes = [
+    ['ကွန်လုံးဆိုင်ရာ', 'ကမ္ဘာလုံးဆိုင်ရာ'], // global — stacked မ္ဘ fails in OCR
+    ['ကျာင်းသားများ',   'ကျောင်းသားများ'],    // students — missing ော
+    ['ကျာင်းသူများ',    'ကျောင်းသူများ'],     // students (f) — missing ော
+    ['ကျာင်းသား',       'ကျောင်းသား'],        // student
+    ['ကျာင်းသူ',        'ကျောင်းသူ'],         // student (f)
+    ['စီပွားရေး',        'စီးပွားရေး'],        // commerce/economy — missing း
+    ['ပညာရေ ',          'ပညာရေး '],          // education — missing း (space-terminated)
+    ['ယလနေ့',           'ယနေ့'],              // today — spurious လ
+    ['ယခနေ့',           'ယနေ့'],              // today — ခ inserted
+    ['လုငယ်',           'လူငယ်'],             // youth — ု/ူ confusion
+    ['နိုင်ငါ',          'နိုင်ငံ'],            // country — ငါ/ငံ substitution
+    ['တိုတက်မှု',        'တိုးတက်မှု'],        // progress — missing း
+  ];
+
+  let result = text;
+  for (const [wrong, right] of fixes) {
+    result = result.split(wrong).join(right);
+  }
+  return result;
+}
+
 // Call Google Cloud Vision API for OCR — used when GOOGLE_VISION_KEY is set
 async function extractTextWithGoogleVision(base64Image, apiKey) {
   const visionRes = await fetch(
@@ -835,46 +865,46 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
       const cleanupMessages = [
         {
           role: 'system',
-          content: `You are a STRICT OCR reconstruction system for ${imageScript} text.
+          content: `You are a MINIMAL OCR artifact remover for ${imageScript} text. You are NOT a language model assistant. You do NOT improve text.
 
-Your ONLY job: fix characters that are OBVIOUSLY broken by scanning artifacts.
+Your ONLY permitted action: replace characters that are physically broken scanning artifacts (box glyphs □, replacement chars ?, garbled bytes) with the correct character where it is 100% unambiguous from context.
 
-ABSOLUTE RULES — violation means failure:
-- Preserve EVERY original word exactly unless it has an obvious scan artifact
-- NEVER rewrite sentences — not even slightly
-- NEVER paraphrase or rephrase anything
+HARD PROHIBITIONS — never do any of these:
+- NEVER change a vowel sign (ာ ါ ိ ီ ု ူ ဲ ့ ် ြ ျ ွ ှ) unless it is literally a box □ or garbage byte
+- NEVER add a vowel sign that is not in the input
+- NEVER remove a vowel sign that is in the input
+- NEVER change word stems, roots, or base consonants
+- NEVER rewrite, paraphrase, or rephrase any part of any sentence
+- NEVER complete a sentence that trails off — leave it as-is
 - NEVER summarize or shorten
-- NEVER improve style or grammar
-- NEVER normalize unusual phrasing — it may be correct in the source
-- NEVER invent or guess missing words — if uncertain, keep the original exactly
-- If a word looks wrong but you are not 100% certain it is an OCR error, KEEP IT AS-IS
-- Remove [?] markers: keep the word before it if readable, remove entirely if not
-- Preserve ALL numbers, dates, currencies, names EXACTLY as they appear
-- Output must be extremely close to input — only minimal targeted character fixes allowed
-- BURMESE SPACING RULE (critical): Burmese/Myanmar script uses spaces between word groups. PRESERVE ALL SPACES between words. Only remove a space if it occurs WITHIN a syllable cluster — between a base consonant and a following combining/dependent mark (like ာ ိ ီ ု ူ ဲ ့ ်). Never merge whole words together.
+- NEVER improve grammar or style
+- NEVER normalize "unusual" phrasing — it may be correct in the source document
+- NEVER invent or guess missing words
+- NEVER change numbers, dates, currencies, or names
+- NEVER remove [?] markers — keep them as-is
+- NEVER add punctuation not present in the input
+- NEVER merge or split words
 
-You are reconstructing, not rewriting. When in doubt, preserve the original.`
+LINE COUNT RULE: Your output must have exactly the same number of lines as the input. Adding or removing lines is a failure.
+
+CHARACTER COUNT RULE: Your output character count must be within 5% of the input character count. Large differences mean you rewrote instead of repaired.
+
+If you are not 100% certain a character is a physical OCR artifact, COPY IT EXACTLY.
+When in doubt: copy. Do not repair. Do not improve.`
         },
         {
           role: 'user',
-          content: `STRICT RECONSTRUCTION TASK:
-Fix ONLY characters with obvious scan artifacts in this ${imageScript} text.
-Every word that is not clearly broken must be kept exactly as written.
+          content: `MINIMAL ARTIFACT REMOVAL TASK:
+Copy this ${imageScript} text exactly. Replace ONLY characters that are physically broken scanning artifacts (box glyphs, replacement chars, garbled bytes) where the correct character is 100% unambiguous.
 
-DO NOT:
-- Rewrite any sentence
-- Change any word order
-- Add any punctuation not in the original
-- Remove any content
-- Translate anything
-- Improve anything that looks grammatically odd — it may be correct
+COPY EVERYTHING ELSE EXACTLY — including unusual phrasing, incomplete sentences, and [?] markers.
 
-ONLY fix: characters clearly corrupted by the scanning process (e.g. box glyphs, broken diacritics, obvious substitution errors)
+INPUT LINE COUNT: ${extractedText.split('\n').length} lines — your output must also have ${extractedText.split('\n').length} lines.
 
 SOURCE OCR TEXT:
 ${extractedText}
 
-Output the reconstructed text with MINIMAL changes only:`
+Output the text with ONLY broken artifact characters replaced. Everything else must be byte-for-byte identical to the input:`
         }
       ];
 
@@ -893,8 +923,17 @@ Output the reconstructed text with MINIMAL changes only:`
           const cleanupData = await cleanupRes.json();
           const cleaned = cleanupData.choices[0].message.content.trim();
           if (cleaned && cleaned.length > 20) {
-            cleanedText = cleaned;
-            console.log('STEP 1.5 — Cleanup complete:', cleanedText.substring(0, 200));
+            // Diff guard: if the model changed > 15% of characters, it rewrote instead of repaired.
+            // Revert to raw OCR output — over-correction is worse than OCR noise.
+            const inputLen = extractedText.replace(/\s/g, '').length;
+            const changedChars = [...extractedText].filter((c, i) => c !== (cleaned[i] || '')).length;
+            const changeRatio = inputLen > 0 ? changedChars / inputLen : 0;
+            if (changeRatio > 0.15) {
+              console.warn('STEP 1.5 — Cleanup changed', (changeRatio * 100).toFixed(0) + '% of chars (> 15%) — reverting to raw OCR to avoid over-correction');
+            } else {
+              cleanedText = cleaned;
+              console.log('STEP 1.5 — Cleanup complete (changed', (changeRatio * 100).toFixed(0) + '%):', cleanedText.substring(0, 200));
+            }
           }
         }
       } catch(e) {
@@ -933,6 +972,13 @@ Output the reconstructed text with MINIMAL changes only:`
       cleanedText = fixBurmeseSpacing(cleanedText);
       if (beforeFix !== cleanedText) {
         console.log('STEP 1.7 — Burmese spacing normalised in cleanedText before LLM');
+      }
+
+      // Apply deterministic correction dictionary after spacing fix
+      const beforeDict = cleanedText;
+      cleanedText = applyBurmeseCorrections(cleanedText);
+      if (beforeDict !== cleanedText) {
+        console.log('STEP 1.7 — Burmese correction dictionary applied');
       }
     }
 
