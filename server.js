@@ -12,13 +12,6 @@ try {
   sharp = null;
 }
 
-let Tesseract;
-try {
-  Tesseract = require('tesseract.js');
-} catch(e) {
-  console.warn('Tesseract.js not available — pre-OCR disabled. Run: npm install tesseract.js');
-  Tesseract = null;
-}
 
 const app = express();
 app.use(cors());
@@ -631,13 +624,8 @@ app.post('/api/scan', async (req, res) => {
       console.log('STEP 0 — Sharp not available, skipping preprocessing');
     }
 
-    // ── STEP 0.5: Tesseract pre-OCR — local mya+eng model ────────────────────
-    // Runs local Tesseract with Burmese+English trained data for character anchoring.
-    // Strong for: numbers, dates, Latin words, and Burmese base characters.
-    // Result injected into Step 1 prompt so the vision LLM can anchor its output.
-    // STEP 0.5 disabled — Tesseract.js crashes on Render free tier (OOM/WASM issue).
-    // Code kept for local re-enable when Node.js is available for testing.
-    // To re-enable: replace the null assignment with the Tesseract.recognize call.
+    // STEP 0.5 (Tesseract pre-OCR) disabled — crashes Render free tier.
+    // Pali ligature quality gate below is kept for when it's re-enabled.
     let tesseractText = null;
 
     // Quality-gate: discard Tesseract reference if it looks garbled.
