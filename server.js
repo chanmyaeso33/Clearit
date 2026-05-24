@@ -27,6 +27,42 @@ process.on('unhandledRejection', (reason) => {
   process.exit(1);
 });
 
+// OpenRouter free-tier equivalents for each Groq model
+const OPENROUTER_MODEL_MAP = {
+  'llama-3.3-70b-versatile':                   'meta-llama/llama-3.3-70b-instruct:free',
+  'meta-llama/llama-4-scout-17b-16e-instruct': 'meta-llama/llama-4-scout:free'
+};
+
+// Drop-in replacement for direct Groq fetch calls.
+// On 429 (rate limit), automatically retries via OpenRouter if OPENROUTER_API_KEY is set.
+async function callLLM({ model, messages, max_tokens, temperature, signal }) {
+  const groqKey = process.env.GROQ_API_KEY;
+  const fetchOpts = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+    body: JSON.stringify({ model, messages, max_tokens, temperature }),
+    ...(signal ? { signal } : {})
+  };
+  const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', fetchOpts);
+  if (groqRes.status !== 429) return groqRes;
+
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  if (!openrouterKey) return groqRes; // no fallback configured — surface the 429
+  console.warn(`Groq 429 on ${model} — falling back to OpenRouter`);
+  const orModel = OPENROUTER_MODEL_MAP[model] || model;
+  return fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openrouterKey}`,
+      'HTTP-Referer': 'https://chanmyaeso33.github.io/Clearit',
+      'X-Title': 'ClearIt'
+    },
+    body: JSON.stringify({ model: orModel, messages, max_tokens, temperature }),
+    ...(signal ? { signal } : {})
+  });
+}
+
 // ✅ Clean markdown JSON wrappers from model output
 function cleanJsonString(str) {
   return str
@@ -431,18 +467,11 @@ Return ONLY this JSON:
       }
     ];
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        max_tokens: 2000,
-        temperature: 0.2,
-        messages: simplifyMessages
-      })
+    const groqRes = await callLLM({
+      model: 'llama-3.3-70b-versatile',
+      messages: simplifyMessages,
+      max_tokens: 2000,
+      temperature: 0.2
     });
 
     if (!groqRes.ok) {
@@ -479,11 +508,7 @@ Return ONLY this JSON:
       for (const attempt of burmeseRetries) {
         console.warn(`Burmese validation failed — retrying (temp ${attempt.temperature})`);
         simplifyMessages[0].content += attempt.msg;
-        const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 2000, temperature: attempt.temperature, messages: simplifyMessages })
-        });
+        const retryRes = await callLLM({ model: 'llama-3.3-70b-versatile', messages: simplifyMessages, max_tokens: 2000, temperature: attempt.temperature });
         if (retryRes.ok) {
           const retryRaw = (await retryRes.json()).choices[0].message.content;
           const retryParsed = safeParseJSON(retryRaw, 'text');
@@ -503,11 +528,7 @@ Return ONLY this JSON:
       for (const attempt of thaiRetries) {
         console.warn(`Thai validation failed — retrying (temp ${attempt.temperature})`);
         simplifyMessages[0].content += attempt.msg;
-        const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 2000, temperature: attempt.temperature, messages: simplifyMessages })
-        });
+        const retryRes = await callLLM({ model: 'llama-3.3-70b-versatile', messages: simplifyMessages, max_tokens: 2000, temperature: attempt.temperature });
         if (retryRes.ok) {
           const retryRaw = (await retryRes.json()).choices[0].message.content;
           const retryParsed = safeParseJSON(retryRaw, 'text');
@@ -764,16 +785,12 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
         const timer = setTimeout(() => controller.abort(), 25000);
         let res;
         try {
-          res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-            signal: controller.signal,
-            body: JSON.stringify({
-              model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-              max_tokens: 4000,
-              temperature: 0.0,
-              messages: buildOcrMessages(imgBase64)
-            })
+          res = await callLLM({
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            messages: buildOcrMessages(imgBase64),
+            max_tokens: 4000,
+            temperature: 0.0,
+            signal: controller.signal
           });
         } finally {
           clearTimeout(timer);
@@ -792,15 +809,11 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
         // If output was cut mid-text and we have a tail crop, run a continuation pass
         if (finishReason === 'length' && extraBase64) {
           console.warn(`STEP 1 ${label} — TRUNCATED — running tail-crop continuation pass`);
-          const tailRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-            body: JSON.stringify({
-              model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-              max_tokens: 2000,
-              temperature: 0.0,
-              messages: buildOcrMessages(extraBase64)
-            })
+          const tailRes = await callLLM({
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            messages: buildOcrMessages(extraBase64),
+            max_tokens: 2000,
+            temperature: 0.0
           });
           if (tailRes.ok) {
             const tailData = await tailRes.json();
@@ -898,15 +911,11 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
       ];
 
       try {
-        const cleanupRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            max_tokens: 2000,
-            temperature: 0.0,
-            messages: cleanupMessages
-          })
+        const cleanupRes = await callLLM({
+          model: 'llama-3.3-70b-versatile',
+          messages: cleanupMessages,
+          max_tokens: 2000,
+          temperature: 0.0
         });
         if (cleanupRes.ok) {
           const cleanupData = await cleanupRes.json();
@@ -1087,15 +1096,11 @@ Return ONLY this JSON:
     // English gets slightly more fluency freedom (0.2)
     // Burmese/Thai stays at 0.1 — script accuracy more important than fluency
 
-    const groundedRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        max_tokens: 1000,
-        temperature: simplifyTemp,
-        messages: groundedMessages
-      })
+    const groundedRes = await callLLM({
+      model: 'llama-3.3-70b-versatile',
+      messages: groundedMessages,
+      max_tokens: 1000,
+      temperature: simplifyTemp
     });
     console.log('STEP 2+3 — Using temperature:', simplifyTemp, 'for lang:', targetLang);
 
@@ -1157,15 +1162,11 @@ You MUST:
 Return ONLY this JSON:
 {"text":"faithful compression using only source words in ${targetLang}","lang":"${imageScript}","topic":"one of: Tech Legal Science Health Finance Education Food Politics Philosophy Creative News Business Culture"}`;
 
-      const retryHallRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 600,
-          temperature: 0.0, // Zero — no creativity at all on retry
-          messages: groundedMessages
-        })
+      const retryHallRes = await callLLM({
+        model: 'llama-3.3-70b-versatile',
+        messages: groundedMessages,
+        max_tokens: 600,
+        temperature: 0.0
       });
       if (retryHallRes.ok) {
         const retryHallData = await retryHallRes.json();
@@ -1187,11 +1188,7 @@ Return ONLY this JSON:
       for (const attempt of burmeseRetries) {
         console.warn(`Scanner: Burmese validation failed — retrying (temp ${attempt.temperature})`);
         groundedMessages[0].content += attempt.msg;
-        const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1000, temperature: attempt.temperature, messages: groundedMessages })
-        });
+        const retryRes = await callLLM({ model: 'llama-3.3-70b-versatile', messages: groundedMessages, max_tokens: 1000, temperature: attempt.temperature });
         if (retryRes.ok) {
           const retryContent = (await retryRes.json()).choices?.[0]?.message?.content;
           const retryParsed = retryContent ? safeParseJSON(retryContent, 'text') : null;
@@ -1212,11 +1209,7 @@ Return ONLY this JSON:
       for (const attempt of thaiRetries) {
         console.warn(`Scanner: Thai validation failed — retrying (temp ${attempt.temperature})`);
         groundedMessages[0].content += attempt.msg;
-        const retryRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1000, temperature: attempt.temperature, messages: groundedMessages })
-        });
+        const retryRes = await callLLM({ model: 'llama-3.3-70b-versatile', messages: groundedMessages, max_tokens: 1000, temperature: attempt.temperature });
         if (retryRes.ok) {
           const retryContent = (await retryRes.json()).choices?.[0]?.message?.content;
           const retryParsed = retryContent ? safeParseJSON(retryContent, 'text') : null;
