@@ -640,7 +640,7 @@ app.post('/api/scan', async (req, res) => {
       try {
         const { data: { text } } = await Tesseract.recognize(
           Buffer.from(processedImageBase64, 'base64'),
-          'mya+eng',
+          'mya',
           {
             langPath: path.join(__dirname, 'tessdata'),
             cacheMethod: 'readOnly',
@@ -649,7 +649,7 @@ app.post('/api/scan', async (req, res) => {
         );
         if (text && text.trim().length > 10) {
           tesseractText = text.trim();
-          console.log('STEP 0.5 — Tesseract (mya+eng):', tesseractText.substring(0, 300));
+          console.log('STEP 0.5 — Tesseract (mya):', tesseractText.substring(0, 300));
         } else {
           console.log('STEP 0.5 — Tesseract returned insufficient text, skipping reference');
         }
