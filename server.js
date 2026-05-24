@@ -208,6 +208,9 @@ function applyBurmeseCorrections(text) {
     ['ပုံဖြိုးတိုက် မူများ',    'ဖွံ့ဖြိုးတိုးတက်မှုများ'],
     ['ပုံဖြိုးတိုးတက်မှုများ',  'ဖွံ့ဖြိုးတိုးတက်မှုများ'],
     ['ပုံဖြိုးတိုးတက်မှု',      'ဖွံ့ဖြိုးတိုးတက်မှု'],
+    ['လေလာကြ',             'လေ့လာကြ'],           // study (plural) — ့ asat dropped
+    ['လေလာသည်',            'လေ့လာသည်'],          // study (formal) — ့ asat dropped
+    ['လေလာ',               'လေ့လာ'],             // study — ့ asat dropped by OCR
   ];
 
   let result = text;
