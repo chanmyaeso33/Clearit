@@ -12,6 +12,17 @@ try {
   sharp = null;
 }
 
+// Tesseract.js — local OCR engine for Burmese/Myanmar text.
+// Primary OCR path; llama-4-scout is only invoked when confidence < 60.
+let Tesseract;
+try {
+  Tesseract = require('tesseract.js');
+  console.log('Tesseract.js loaded');
+} catch(e) {
+  console.warn('Tesseract.js not available — will use llama-4-scout for OCR:', e.message);
+  Tesseract = null;
+}
+
 
 const app = express();
 app.use(cors());
@@ -397,6 +408,43 @@ function novelWordRatio(sourceText, outputText) {
   return novelWords.length / outputWords.length;
 }
 
+// ✅ Tesseract.js OCR — runs locally, no API cost.
+// Returns { text, confidence } where confidence is 0–100.
+// Creates a worker per call; terminate() releases WASM memory.
+async function runTesseractOcr(imageBuffer) {
+  const { createWorker } = Tesseract;
+  const worker = await createWorker(['mya', 'eng'], 1 /* OEM: LSTM only */, {
+    langPath: path.join(__dirname, 'tessdata'), // local traineddata files
+    logger: () => {}                            // suppress verbose progress logs
+  });
+  try {
+    const { data } = await worker.recognize(imageBuffer);
+    return { text: (data.text || '').trim(), confidence: data.confidence || 0 };
+  } finally {
+    await worker.terminate();
+  }
+}
+
+// Quality gate for Tesseract output.
+// Returns { ok, reason } — ok=true means the text is usable as primary OCR.
+function assessTesseractQuality(text, confidence) {
+  if (confidence < 60) return { ok: false, reason: `low confidence (${confidence.toFixed(1)}%)` };
+  if (!text || text.length < 5) return { ok: false, reason: 'output too short' };
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  if (words.length < 3) return { ok: false, reason: 'too few words' };
+  const avgLen = words.reduce((s, w) => s + w.length, 0) / words.length;
+  // junk = tokens that are entirely non-script garbage (box chars, control chars)
+  const junkRatio = words.filter(w => /^[■-◿\x00-\x1F -]+$/.test(w)).length / words.length;
+  if (avgLen < 2 || junkRatio > 0.4) return { ok: false, reason: `garbled (avgWordLen=${avgLen.toFixed(1)}, junk=${(junkRatio*100).toFixed(0)}%)` };
+  // Pali-heavy: stacked consonant marker (U+1039) > 5% of Myanmar chars → Tesseract mya
+  // model misreads ligatures; fall back to vision model which handles them better.
+  const burmeseChars = (text.match(/[က-႟]/g) || []).length;
+  const stackedConsonants = (text.match(/္/g) || []).length;
+  const stackRatio = burmeseChars > 0 ? stackedConsonants / burmeseChars : 0;
+  if (stackRatio > 0.05) return { ok: false, reason: `Pali-heavy (stackRatio=${stackRatio.toFixed(2)})` };
+  return { ok: true, reason: `conf=${confidence.toFixed(1)}% len=${text.length} avgWordLen=${avgLen.toFixed(1)}` };
+}
+
 // ✅ Main endpoint
 app.post('/api/simplify', async (req, res) => {
   try {
@@ -732,35 +780,7 @@ app.post('/api/scan', async (req, res) => {
       console.log('STEP 0 — Sharp not available, skipping preprocessing');
     }
 
-    // STEP 0.5 (Tesseract pre-OCR) disabled — crashes Render free tier.
-    // Pali ligature quality gate below is kept for when it's re-enabled.
-    let tesseractText = null;
-
-    // Quality-gate: discard Tesseract reference if it looks garbled.
-    // Check 1 — word quality: avgLen < 3 or > 40% junk tokens = garbled Latin output.
-    // Check 2 — Pali ligature ratio: U+1039 (stacked consonant marker) > 5% of Burmese
-    //   chars means the image is Pali-heavy; Tesseract misreads those ligatures and
-    //   injecting the garbled reference degrades the vision LLM output.
-    const usableTesseractText = (() => {
-      if (!tesseractText) return null;
-      const words = tesseractText.split(/\s+/).filter(w => w.length > 0);
-      if (words.length < 5) return null;
-      const avgLen = words.reduce((s, w) => s + w.length, 0) / words.length;
-      const junkRatio = words.filter(w => w.length <= 1 || /^[^a-zA-Z0-9]+$/.test(w)).length / words.length;
-      if (avgLen < 3 || junkRatio > 0.4) {
-        console.log('STEP 0.5 — Tesseract reference discarded: garbled (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%)');
-        return null;
-      }
-      const burmeseChars = (tesseractText.match(/[က-႟]/g) || []).length;
-      const stackedConsonants = (tesseractText.match(/္/g) || []).length;
-      const stackRatio = burmeseChars > 0 ? stackedConsonants / burmeseChars : 0;
-      if (stackRatio > 0.05) {
-        console.log('STEP 0.5 — Tesseract reference discarded: Pali ligature ratio too high', stackRatio.toFixed(2));
-        return null;
-      }
-      console.log('STEP 0.5 — Tesseract reference usable (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%, stackRatio:', stackRatio.toFixed(2) + ')');
-      return tesseractText;
-    })();
+    // (STEP 0.5 slot reserved — no pre-OCR stub needed; Tesseract runs in STEP 1 below)
 
 
     // ── STEP 1: Extract raw text from the image (vision model) ──────────────
@@ -807,12 +827,7 @@ Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the
           },
           {
             type: 'text',
-            text: `${usableTesseractText ? `TESSERACT PRE-OCR REFERENCE (local mya+eng model — use as anchor):
-${usableTesseractText}
-
-⚠ This reference may have errors for stacked Burmese diacritics and Pali ligatures. Trust your visual read of the image for those characters. Use this mainly to anchor numbers, dates, and base Burmese/Latin words.
-
-` : ''}Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
+            text: `Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
 
 IMPORTANT: Do NOT stop after the first paragraph or first few lines. Read and copy ALL text in the image, including text at the bottom.
 
@@ -831,22 +846,42 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
     ];
 
     // ── STEP 1: OCR backend selection ────────────────────────────────────────
+    // Priority: ① Tesseract.js (local, free) → ② Google Vision → ③ llama-4-scout
     const googleVisionKey = process.env.GOOGLE_VISION_KEY;
     let extractedText;
 
-    if (googleVisionKey) {
-      console.log('STEP 1 — Using Google Cloud Vision OCR');
+    // ① Tesseract.js — primary path, no API cost
+    if (Tesseract) {
+      console.log('STEP 1 — Trying Tesseract.js (mya+eng) ...');
+      try {
+        const imgBuf = processedSharpBuffer || Buffer.from(processedImageBase64, 'base64');
+        const tess = await runTesseractOcr(imgBuf);
+        const quality = assessTesseractQuality(tess.text, tess.confidence);
+        console.log(`STEP 1 — Tesseract result: ${quality.reason} → ${quality.ok ? 'ACCEPTED' : 'REJECTED'}`);
+        if (quality.ok) {
+          extractedText = tess.text;
+          console.log('STEP 1 — Tesseract output:', extractedText.substring(0, 300));
+        }
+      } catch (tessErr) {
+        console.warn('STEP 1 — Tesseract error:', tessErr.message);
+      }
+    }
+
+    // ② Google Cloud Vision fallback (if API key is configured)
+    if (!extractedText && googleVisionKey) {
+      console.log('STEP 1 — Falling back to Google Cloud Vision OCR');
       try {
         extractedText = await extractTextWithGoogleVision(processedImageBase64, googleVisionKey);
         console.log('STEP 1 (Vision) — Extracted:', extractedText.substring(0, 600));
       } catch (visionErr) {
-        console.warn('STEP 1 — Google Vision failed, falling back to llama-4-scout:', visionErr.message);
+        console.warn('STEP 1 — Google Vision failed:', visionErr.message);
         extractedText = null;
       }
     }
 
-    if (!googleVisionKey || !extractedText) {
-      console.log('STEP 1 — Using llama-4-scout OCR (two-pass crop)');
+    // ③ llama-4-scout fallback — vision model, uses Groq API
+    if (!extractedText) {
+      console.log('STEP 1 — Falling back to llama-4-scout OCR');
 
       const ocrSystemPrompt = extractMessages[0].content;
       const ocrUserText = extractMessages[1].content[1].text;
