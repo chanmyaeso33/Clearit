@@ -635,30 +635,10 @@ app.post('/api/scan', async (req, res) => {
     // Runs local Tesseract with Burmese+English trained data for character anchoring.
     // Strong for: numbers, dates, Latin words, and Burmese base characters.
     // Result injected into Step 1 prompt so the vision LLM can anchor its output.
+    // STEP 0.5 disabled — Tesseract.js crashes on Render free tier (OOM/WASM issue).
+    // Code kept for local re-enable when Node.js is available for testing.
+    // To re-enable: replace the null assignment with the Tesseract.recognize call.
     let tesseractText = null;
-    if (Tesseract) {
-      try {
-        const { data: { text } } = await Tesseract.recognize(
-          Buffer.from(imageBase64, 'base64'),
-          'mya',
-          {
-            cachePath: path.join(__dirname, 'tessdata'),
-            cacheMethod: 'readOnly',
-            logger: () => {},
-          }
-        );
-        if (text && text.trim().length > 10) {
-          tesseractText = text.trim();
-          console.log('STEP 0.5 — Tesseract (mya):', tesseractText.substring(0, 300));
-        } else {
-          console.log('STEP 0.5 — Tesseract returned insufficient text, skipping reference');
-        }
-      } catch (tessErr) {
-        console.warn('STEP 0.5 — Tesseract failed:', tessErr.message);
-      }
-    } else {
-      console.log('STEP 0.5 — Tesseract not available, skipping pre-OCR');
-    }
 
     // Quality-gate: discard Tesseract reference if it looks garbled.
     // Check 1 — word quality: avgLen < 3 or > 40% junk tokens = garbled Latin output.
