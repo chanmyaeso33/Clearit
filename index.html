@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClearIt — Simplify Anything, Instantly</title>
+<title>ClearIt — Understand Anything in Seconds</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Clash+Display:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 
@@ -240,12 +240,31 @@ nav {
 
 /* STEPS */
 .steps-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.features-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
 .step-item { background: var(--paper); padding: 44px 36px; transition: background 0.3s; }
 .step-item:hover { background: var(--cream); }
 .step-number { font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 900; color: var(--border); line-height: 1; margin-bottom: 20px; letter-spacing: -2px; }
 .step-icon { font-size: 28px; margin-bottom: 14px; }
 .step-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 20px; margin-bottom: 10px; }
 .step-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+/* PROBLEM */
+.problem-section { padding: 110px 60px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+.problem-copy p { font-size: 16px; color: var(--muted); line-height: 1.8; margin-bottom: 22px; max-width: 500px; }
+.problem-list { display: grid; gap: 12px; }
+.problem-list span { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); padding: 14px 16px; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; }
+.problem-demo { background: var(--ink); border-radius: 18px; padding: 28px; box-shadow: 0 30px 70px rgba(0,0,0,0.18); }
+.demo-block { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+.demo-block:last-child { margin-bottom: 0; background: rgba(200,240,80,0.06); border-color: rgba(200,240,80,0.2); }
+.demo-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+.demo-text { color: rgba(255,255,255,0.72); font-size: 14px; line-height: 1.7; }
+.demo-block:last-child .demo-label { color: #c8f050; }
+
+/* WHY */
+.why-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.why-card { background: var(--cream); border: 1px solid var(--border); border-radius: 16px; padding: 34px 28px; }
+.why-card h3 { font-family: 'Playfair Display', serif; font-size: 22px; line-height: 1.15; margin-bottom: 12px; }
+.why-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
 
 /* AUDIENCE */
 .audience-section { background: var(--ink); padding: 110px 60px; }
@@ -698,6 +717,11 @@ textarea::placeholder { color: var(--app-muted); }
 .app-step-icon { font-size: 20px; margin-bottom: 7px; }
 .app-step-text { font-size: 11px; color: var(--app-muted); line-height: 1.5; }
 
+/* TABLET */
+@media (max-width: 1100px) {
+  .features-grid { grid-template-columns: repeat(2,1fr); }
+}
+
 /* MOBILE */
 @media (max-width: 768px) {
   nav { padding: 14px 20px; }
@@ -708,6 +732,9 @@ textarea::placeholder { color: var(--app-muted); }
   .lp-section { padding: 60px 24px; }
   .step-item { padding: 28px 20px; }
   .steps-grid { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+  .problem-section { grid-template-columns: 1fr; padding: 72px 24px; gap: 36px; }
+  .why-grid { grid-template-columns: 1fr; }
   .audience-section { padding: 72px 24px; }
   .audience-grid { grid-template-columns: 1fr; }
   .testimonial-section { grid-template-columns: 1fr; padding: 72px 24px; gap: 40px; }
@@ -751,32 +778,37 @@ textarea::placeholder { color: var(--app-muted); }
 <!-- ========== HERO ========== -->
 <section class="hero">
   <div class="hero-left">
-    <div class="hero-tag">AI-powered text simplifier</div>
+    <div class="hero-tag">AI that explains, not confuses</div>
     <h1 class="hero-headline">
-      The difference between<br>easy and difficult<br>is <em>understanding.</em>
+      Understand Anything<br>in <em>Seconds.</em>
     </h1>
-    <p class="hero-sub">ClearIt simplifies any complex text into plain, clear language — instantly. For students, office workers, and media professionals.</p>
+    <p class="hero-sub">ClearIt transforms complex text into simple, clear explanations in any language. Perfect for students, readers, researchers, and everyday learning.</p>
     <div class="hero-actions">
       <a href="#app-section" class="btn-primary">Try ClearIt Free →</a>
-      <a href="#app-section" class="btn-secondary">Try an Example ↓</a>
+      <a href="#app-section" class="btn-secondary">Simplify Text Now ↓</a>
     </div>
     <div class="trust-signals">
-      <span>⚡ Powered by Groq AI</span>
+      <span>No complicated prompts</span>
+      <span>Paste text and understand faster</span>
       <span>🌐 9 Languages</span>
       <span>✓ No signup required</span>
-      <span>🔒 Private & secure</span>
     </div>
   </div>
   <div class="hero-right">
     <div class="hero-mockup">
       <div class="mockup-card" id="heroCard">
         <div id="heroInputState">
-          <div class="mockup-label">YOUR COMPLEX TEXT</div>
-          <textarea id="heroInput" class="hero-textarea" placeholder="Paste any complex text here and watch the magic happen..."></textarea>
+          <div class="mockup-label">BEFORE</div>
+          <textarea id="heroInput" class="hero-textarea" placeholder="Paste any complex text here...">Photosynthesis is a biochemical process involving chlorophyll that converts light energy into chemical energy.</textarea>
           <button class="mockup-btn" onclick="heroSimplify()" id="heroBtn">
-            <span id="heroBtnText">Simplify It ✦</span>
+            <span id="heroBtnText">Simplify Text Now</span>
             <span id="heroLoader" style="display:none">...</span>
           </button>
+          <div class="mockup-result">
+            <div class="mockup-result-label">AFTER</div>
+            <div class="mockup-result-text">Photosynthesis is how plants make food using sunlight.</div>
+            <div class="mockup-lang">English · Science</div>
+          </div>
         </div>
         <div id="heroResultState" style="display:none">
           <div class="mockup-result" id="heroResult" style="margin-bottom:12px">
@@ -795,50 +827,101 @@ textarea::placeholder { color: var(--app-muted); }
 <div class="marquee-section">
   <div class="marquee-track">
     <div class="marquee-item"><span class="marquee-dot">✦</span> Students</div>
-    <div class="marquee-item"><span class="marquee-dot">✦</span> Office Workers</div>
-    <div class="marquee-item"><span class="marquee-dot">✦</span> Journalists</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> Everyday Readers</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> Researchers</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> English</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Burmese</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Japanese</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Instant Clarity</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Any Language</div>
-    <div class="marquee-item"><span class="marquee-dot">✦</span> AI Powered</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> Read Less. Understand More.</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Students</div>
-    <div class="marquee-item"><span class="marquee-dot">✦</span> Office Workers</div>
-    <div class="marquee-item"><span class="marquee-dot">✦</span> Journalists</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> Everyday Readers</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> Researchers</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> English</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Burmese</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Japanese</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Instant Clarity</div>
     <div class="marquee-item"><span class="marquee-dot">✦</span> Any Language</div>
-    <div class="marquee-item"><span class="marquee-dot">✦</span> AI Powered</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> Read Less. Understand More.</div>
   </div>
 </div>
 
-<!-- HOW IT WORKS -->
+<!-- PROBLEM / SOLUTION -->
+<section class="problem-section">
+  <div class="problem-copy reveal">
+    <div class="section-tag">The problem</div>
+    <h2 class="section-title">Too much information.<br><em>Too little clarity.</em></h2>
+    <p>Long articles, academic writing, official documents, and complicated explanations waste time and create frustration.</p>
+    <div class="problem-list">
+      <span>✓ Understand faster</span>
+      <span>✓ Reduce confusion</span>
+      <span>✓ Learn more efficiently</span>
+      <span>✓ Focus on what actually matters</span>
+    </div>
+  </div>
+  <div class="problem-demo reveal">
+    <div class="demo-block">
+      <div class="demo-label">Before</div>
+      <div class="demo-text">The contractual obligation is contingent upon fulfillment of the aforementioned conditions by the receiving party.</div>
+    </div>
+    <div class="demo-block">
+      <div class="demo-label">After ClearIt</div>
+      <div class="demo-text">You only have to do this if the other person meets the conditions listed earlier.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
 <section id="how">
   <div class="lp-section">
-    <div class="section-tag reveal">How it works</div>
-    <h2 class="section-title reveal">Three steps to <em>instant clarity</em></h2>
-    <div class="steps-grid reveal">
+    <div class="section-tag reveal">What ClearIt does</div>
+    <h2 class="section-title reveal">Difficult text becomes <em>easy to understand</em></h2>
+    <div class="features-grid reveal">
       <div class="step-item">
         <div class="step-number">01</div>
         <div class="step-icon">📋</div>
-        <div class="step-title">Paste your text</div>
-        <div class="step-desc">Any complex text — legal documents, scientific papers, news articles, business contracts. Any language works.</div>
+        <div class="step-title">Simplify Difficult Text</div>
+        <div class="step-desc">Turn academic, technical, or complicated writing into clear and readable explanations.</div>
       </div>
       <div class="step-item">
         <div class="step-number">02</div>
-        <div class="step-icon">✦</div>
-        <div class="step-title">AI understands</div>
-        <div class="step-desc">ClearIt detects the language, understands the context, and simplifies the meaning into plain everyday language.</div>
+        <div class="step-icon">🌐</div>
+        <div class="step-title">Works in Multiple Languages</div>
+        <div class="step-desc">Simplify and summarize content across different languages without losing meaning.</div>
       </div>
       <div class="step-item">
         <div class="step-number">03</div>
-        <div class="step-icon">🎨</div>
-        <div class="step-title">Get clarity instantly</div>
-        <div class="step-desc">Your simplified result appears with a dynamic theme matching the content. Science gets blue. Philosophy gets purple.</div>
+        <div class="step-icon">⚡</div>
+        <div class="step-title">Instant AI Responses</div>
+        <div class="step-desc">Powered by ultra-fast AI processing for near real-time results when you need clarity quickly.</div>
       </div>
+      <div class="step-item">
+        <div class="step-number">04</div>
+        <div class="step-icon">📝</div>
+        <div class="step-title">Summarize in One Click</div>
+        <div class="step-desc">Get the key ideas quickly without reading long paragraphs or writing a detailed prompt.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY CLEARIT -->
+<section class="lp-section">
+  <div class="section-tag reveal">Why ClearIt?</div>
+  <h2 class="section-title reveal">The fastest way to understand <em>difficult information</em></h2>
+  <div class="why-grid reveal">
+    <div class="why-card">
+      <h3>Faster than prompting a chatbot</h3>
+      <p>No long instructions needed. Paste text and get clarity instantly.</p>
+    </div>
+    <div class="why-card">
+      <h3>Designed for understanding</h3>
+      <p>ClearIt focuses on simplifying information, not overwhelming you with an open-ended AI conversation.</p>
+    </div>
+    <div class="why-card">
+      <h3>Built for everyday learning</h3>
+      <p>Homework, articles, research, online content, and documents become easier to read in seconds.</p>
     </div>
   </div>
 </section>
@@ -847,25 +930,25 @@ textarea::placeholder { color: var(--app-muted); }
 <section id="who" class="audience-section">
   <div class="audience-inner">
     <div class="section-tag reveal">Who it's for</div>
-    <h2 class="section-title reveal">Built for people who <em>deserve to understand</em></h2>
+    <h2 class="section-title reveal">Built for people who need clarity <em>fast</em></h2>
     <div class="audience-grid reveal">
       <div class="audience-card students">
         <div class="audience-emoji">🎓</div>
         <div class="audience-title">Students</div>
-        <div class="audience-desc">Textbooks, research papers, academic articles — turn dense academic language into something you can actually study.</div>
+        <div class="audience-desc">Turn textbooks, research papers, and class notes into explanations that are easier to study.</div>
         <div class="audience-use">Textbooks · Research · Exams</div>
       </div>
       <div class="audience-card workers">
         <div class="audience-emoji">💼</div>
-        <div class="audience-title">Office Workers</div>
-        <div class="audience-desc">Contracts, company policies, government regulations — understand every document without confusion.</div>
-        <div class="audience-use">Contracts · Policies · Regulations</div>
+        <div class="audience-title">Multilingual Readers</div>
+        <div class="audience-desc">Understand difficult English or foreign-language content without switching into a full chatbot.</div>
+        <div class="audience-use">Articles · Documents · Translation</div>
       </div>
       <div class="audience-card media">
         <div class="audience-emoji">📰</div>
-        <div class="audience-title">Media & Journalism</div>
-        <div class="audience-desc">Simplify complex press releases and technical reports into clear language your audience will understand.</div>
-        <div class="audience-use">Press Releases · Reports · News</div>
+        <div class="audience-title">Quick Learners</div>
+        <div class="audience-desc">Get the main idea from articles, policies, reports, and online content when time is short.</div>
+        <div class="audience-use">Reading · Research · Productivity</div>
       </div>
     </div>
   </div>
@@ -876,26 +959,26 @@ textarea::placeholder { color: var(--app-muted); }
   <div class="testimonial-section">
     <div class="testimonial-left reveal">
       <div class="big-quote">"</div>
-      <p class="testimonial-text">It's super cool and convenient. I understood everything immediately.</p>
+      <p class="testimonial-text">ClearIt helps me understand long English articles much faster.</p>
       <div class="testimonial-author">
         <div class="author-avatar">M</div>
         <div class="author-info">
           <span class="author-name">May</span>
-          <span class="author-role">First ClearIt user</span>
+          <span class="author-role">Early user feedback</span>
         </div>
       </div>
     </div>
     <div class="testimonial-right reveal">
       <div class="stat-card">
-        <div class="stat-num">3<span>+</span></div>
-        <div class="stat-label">Languages tested — English, Burmese, Japanese and more</div>
+        <div class="stat-num">9<span>+</span></div>
+        <div class="stat-label">Output languages for multilingual learning and reading</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">2<span>sec</span></div>
-        <div class="stat-label">Average time to simplify any complex text</div>
+        <div class="stat-num">Fast</div>
+        <div class="stat-label">Groq-powered responses built for quick understanding</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">100<span>%</span></div>
+        <div class="stat-num">0<span>$</span></div>
         <div class="stat-label">Free to start — no credit card, no downloads</div>
       </div>
     </div>
@@ -906,8 +989,8 @@ textarea::placeholder { color: var(--app-muted); }
 <section class="lang-section">
   <div class="lang-inner">
     <div class="lang-text reveal">
-      <h3>Works in any language</h3>
-      <p>Paste text in any language.<br>ClearIt understands all of them.</p>
+      <h3>Simplicity for every language</h3>
+      <p>Simplify or summarize across languages<br>without losing the main idea.</p>
     </div>
     <div class="lang-tags reveal">
       <span class="lang-tag featured">🇲🇲 Burmese</span>
@@ -927,12 +1010,12 @@ textarea::placeholder { color: var(--app-muted); }
 <section class="cta-section">
   <div class="cta-inner">
     <div class="section-tag reveal">Start now — it's free</div>
-    <h2 class="cta-title reveal">Stop being confused.<br>Start <em>understanding.</em></h2>
-    <p class="cta-sub reveal">Paste your first complex text and experience the clarity. No signup. No credit card. Just paste and simplify.</p>
+    <h2 class="cta-title reveal">Read less.<br><em>Understand more.</em></h2>
+    <p class="cta-sub reveal">Paste your first complex text and see it turn into a clear explanation. No signup. No credit card. Just paste and understand faster.</p>
     <div class="cta-actions reveal">
       <a href="#app-section" class="btn-primary">Try ClearIt Free →</a>
     </div>
-    <p class="cta-note reveal">Free to use · Works on any device · Any language</p>
+    <p class="cta-note reveal">Clarity powered by AI · Works on any device · Any language</p>
   </div>
 </section>
 
@@ -940,7 +1023,7 @@ textarea::placeholder { color: var(--app-muted); }
 <div id="app-section">
   <div class="app-divider">
     <div class="app-divider-tag">The App</div>
-    <h2>Paste your text.<br>Get <em>instant clarity.</em></h2>
+    <h2>Paste text.<br>Understand <em>faster.</em></h2>
   </div>
 
   <div class="app-bg-orb"></div>
@@ -948,7 +1031,7 @@ textarea::placeholder { color: var(--app-muted); }
   <div class="app-wrapper">
     <div class="app-header">
       <div class="app-logo">Clear<span>It</span></div>
-      <div class="app-tagline">Paste complex text. Get instant clarity.</div>
+      <div class="app-tagline">AI that makes difficult information easy to understand.</div>
       <div class="app-version">v5.0 — Simplify + Summarize · Scanner · ☁️ Cloud Sync</div>
 
       <!-- Usage badge — hidden while payment is off -->
@@ -1087,7 +1170,7 @@ textarea::placeholder { color: var(--app-muted); }
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">Clear<span>It</span></div>
-  <div class="footer-copy">© 2026 ClearIt. Built with ✦ and AI.</div>
+  <div class="footer-copy">© 2026 ClearIt. Understanding made simple.</div>
   <div class="footer-links">
     <a href="#app-section">Try App</a>
     <a href="https://forms.gle/dL3WawAYX3aKXskJ6" target="_blank" style="color:#c8f050; font-weight:600;">💬 Give Feedback</a>
