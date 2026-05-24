@@ -642,7 +642,7 @@ app.post('/api/scan', async (req, res) => {
           Buffer.from(imageBase64, 'base64'),
           'mya',
           {
-            langPath: path.join(__dirname, 'tessdata'),
+            cachePath: path.join(__dirname, 'tessdata'),
             cacheMethod: 'readOnly',
             logger: () => {},
           }
