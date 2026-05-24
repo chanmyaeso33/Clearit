@@ -211,6 +211,9 @@ function applyBurmeseCorrections(text) {
     ['လေလာကြ',             'လေ့လာကြ'],           // study (plural) — ့ asat dropped
     ['လေလာသည်',            'လေ့လာသည်'],          // study (formal) — ့ asat dropped
     ['လေလာ',               'လေ့လာ'],             // study — ့ asat dropped by OCR
+    ['ဂိုဗ်ချုပ်',           'နိဂုံးချုပ်'],        // conclusion — ဂိုဗ်/နိဂုံး substitution
+    ['စာမကျက်နှာ',          'စာမျက်နှာ'],          // page — မကျက်/မျက် OCR error
+    ['စာမကျက်',             'စာမျက်နှာ'],          // page (truncated form)
   ];
 
   let result = text;
