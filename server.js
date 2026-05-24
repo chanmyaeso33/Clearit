@@ -867,11 +867,16 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
     let extractedText;
 
     // ① Tesseract.js — primary path, no API cost
-    if (Tesseract) {
+    // Guarded by TESSERACT_ENABLED env var (set to 'false' to skip) and a 15 s timeout
+    // so a stalled WASM worker never hangs the request on resource-constrained hosts.
+    const tesseractEnabled = process.env.TESSERACT_ENABLED !== 'false';
+    if (Tesseract && tesseractEnabled) {
       console.log('STEP 1 — Trying Tesseract.js (mya+eng) ...');
       try {
         const imgBuf = processedSharpBuffer || Buffer.from(processedImageBase64, 'base64');
-        const tess = await runTesseractOcr(imgBuf);
+        const tessTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Tesseract timeout (15 s)')), 15000));
+        const tess = await Promise.race([runTesseractOcr(imgBuf), tessTimeout]);
         const quality = assessTesseractQuality(tess.text, tess.confidence);
         console.log(`STEP 1 — Tesseract result: ${quality.reason} → ${quality.ok ? 'ACCEPTED' : 'REJECTED'}`);
         if (quality.ok) {
