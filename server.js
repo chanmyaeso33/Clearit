@@ -33,8 +33,45 @@ const OPENROUTER_MODEL_MAP = {
   'meta-llama/llama-4-scout-17b-16e-instruct': 'meta-llama/llama-4-scout:free'
 };
 
+// Gemini equivalents for each Groq model (gemini-2.0-flash supports vision too)
+const GEMINI_MODEL_MAP = {
+  'llama-3.3-70b-versatile':                   'gemini-2.0-flash',
+  'meta-llama/llama-4-scout-17b-16e-instruct': 'gemini-2.0-flash'
+};
+
+// Convert OpenAI-style messages to Gemini API format.
+// Handles both plain-text and multipart (text + image_url) messages.
+function toGeminiMessages(messages) {
+  const systemParts = [];
+  const contents = [];
+  for (const msg of messages) {
+    if (msg.role === 'system') {
+      systemParts.push({ text: msg.content });
+    } else {
+      const role = msg.role === 'assistant' ? 'model' : 'user';
+      if (typeof msg.content === 'string') {
+        contents.push({ role, parts: [{ text: msg.content }] });
+      } else if (Array.isArray(msg.content)) {
+        const parts = msg.content.map(part => {
+          if (part.type === 'text') return { text: part.text };
+          if (part.type === 'image_url') {
+            const match = part.image_url.url.match(/^data:([^;]+);base64,(.+)$/);
+            if (match) return { inlineData: { mimeType: match[1], data: match[2] } };
+          }
+          return { text: '[unsupported content]' };
+        });
+        contents.push({ role, parts });
+      }
+    }
+  }
+  return {
+    systemInstruction: systemParts.length > 0 ? { parts: systemParts } : undefined,
+    contents
+  };
+}
+
 // Drop-in replacement for direct Groq fetch calls.
-// On 429 (rate limit), automatically retries via OpenRouter if OPENROUTER_API_KEY is set.
+// On 429 (rate limit): Groq → OpenRouter → Gemini, stopping at the first success.
 async function callLLM({ model, messages, max_tokens, temperature, signal }) {
   const groqKey = process.env.GROQ_API_KEY;
   const fetchOpts = {
@@ -46,21 +83,63 @@ async function callLLM({ model, messages, max_tokens, temperature, signal }) {
   const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', fetchOpts);
   if (groqRes.status !== 429) return groqRes;
 
+  // Groq 429 → try OpenRouter
   const openrouterKey = process.env.OPENROUTER_API_KEY;
-  if (!openrouterKey) return groqRes; // no fallback configured — surface the 429
-  console.warn(`Groq 429 on ${model} — falling back to OpenRouter`);
-  const orModel = OPENROUTER_MODEL_MAP[model] || model;
-  return fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openrouterKey}`,
-      'HTTP-Referer': 'https://chanmyaeso33.github.io/Clearit',
-      'X-Title': 'ClearIt'
-    },
-    body: JSON.stringify({ model: orModel, messages, max_tokens, temperature }),
-    ...(signal ? { signal } : {})
-  });
+  if (openrouterKey) {
+    console.warn(`Groq 429 on ${model} — falling back to OpenRouter`);
+    const orModel = OPENROUTER_MODEL_MAP[model] || model;
+    const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openrouterKey}`,
+        'HTTP-Referer': 'https://chanmyaeso33.github.io/Clearit',
+        'X-Title': 'ClearIt'
+      },
+      body: JSON.stringify({ model: orModel, messages, max_tokens, temperature }),
+      ...(signal ? { signal } : {})
+    });
+    if (orRes.status !== 429) return orRes;
+    console.warn(`OpenRouter 429 on ${orModel} — falling back to Gemini`);
+  }
+
+  // OpenRouter 429 or not configured → try Gemini
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) return groqRes; // no more fallbacks — surface the original 429
+
+  const geminiModel = GEMINI_MODEL_MAP[model] || 'gemini-2.0-flash';
+  console.warn(`Falling back to Gemini (${geminiModel})`);
+  const { systemInstruction, contents } = toGeminiMessages(messages);
+  const geminiBody = { contents, generationConfig: { maxOutputTokens: max_tokens, temperature } };
+  if (systemInstruction) geminiBody.systemInstruction = systemInstruction;
+
+  const geminiRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiBody),
+      ...(signal ? { signal } : {})
+    }
+  );
+
+  if (!geminiRes.ok) {
+    console.warn(`Gemini fallback failed: ${geminiRes.status}`);
+    return groqRes; // return original 429 if Gemini also fails
+  }
+
+  const geminiData = await geminiRes.json();
+  const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  const finishReason = geminiData.candidates?.[0]?.finishReason?.toLowerCase() ?? 'stop';
+
+  // Wrap in OpenAI-compatible shape so all callers work unchanged
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({
+      choices: [{ message: { role: 'assistant', content: text }, finish_reason: finishReason }]
+    })
+  };
 }
 
 // ✅ Clean markdown JSON wrappers from model output
