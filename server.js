@@ -639,7 +639,7 @@ app.post('/api/scan', async (req, res) => {
     if (Tesseract) {
       try {
         const { data: { text } } = await Tesseract.recognize(
-          Buffer.from(processedImageBase64, 'base64'),
+          Buffer.from(imageBase64, 'base64'),
           'mya',
           {
             langPath: path.join(__dirname, 'tessdata'),
