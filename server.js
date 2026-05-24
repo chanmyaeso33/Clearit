@@ -782,8 +782,11 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
         }
         if (!res.ok) { console.warn(`STEP 1 ${label} failed:`, res.status); return ''; }
         const data = await res.json();
-        if (!data.choices || !data.choices[0]) { console.warn(`STEP 1 ${label} — no choices in response`); return ''; }
-        const choice = data.choices[0];
+        const choice = data.choices?.[0];
+        if (!choice?.message?.content) {
+          console.warn(`STEP 1 ${label} — empty/missing choices in OCR response:`, JSON.stringify(data).substring(0, 200));
+          return '';
+        }
         let text = choice.message.content.trim();
         const finishReason = choice.finish_reason;
         console.log(`STEP 1 ${label} [finish: ${finishReason}] —`, text.substring(0, 300));
@@ -803,7 +806,7 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
           });
           if (tailRes.ok) {
             const tailData = await tailRes.json();
-            const tailText = tailData.choices[0].message.content.trim();
+            const tailText = tailData.choices?.[0]?.message?.content?.trim() ?? '';
             if (tailText && tailText.length > 10) {
               text = text + '\n' + tailText;
               console.log(`STEP 1 ${label} tail-crop added`, tailText.length, 'chars');
@@ -1104,6 +1107,10 @@ Return ONLY this JSON:
     }
 
     const groundedData = await groundedRes.json();
+    if (!groundedData.choices?.[0]?.message?.content) {
+      console.error('STEP 2+3 — No choices in grounded response:', JSON.stringify(groundedData).substring(0, 200));
+      return res.status(500).json({ error: 'Simplification model returned empty response' });
+    }
     const groundedRaw = groundedData.choices[0].message.content;
     console.log('STEP 2+3 — Grounded output:', groundedRaw.substring(0, 400));
 
@@ -1164,7 +1171,8 @@ Return ONLY this JSON:
       });
       if (retryHallRes.ok) {
         const retryHallData = await retryHallRes.json();
-        const retryHallParsed = safeParseJSON(retryHallData.choices[0].message.content, 'text');
+        const retryHallContent = retryHallData.choices?.[0]?.message?.content;
+        const retryHallParsed = retryHallContent ? safeParseJSON(retryHallContent, 'text') : null;
         if (retryHallParsed && retryHallParsed.text) {
           console.log('Hallucination retry output:', retryHallParsed.text.substring(0, 200));
           Object.assign(parsed, retryHallParsed);
@@ -1187,7 +1195,8 @@ Return ONLY this JSON:
           body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1000, temperature: attempt.temperature, messages: groundedMessages })
         });
         if (retryRes.ok) {
-          const retryParsed = safeParseJSON((await retryRes.json()).choices[0].message.content, 'text');
+          const retryContent = (await retryRes.json()).choices?.[0]?.message?.content;
+          const retryParsed = retryContent ? safeParseJSON(retryContent, 'text') : null;
           if (retryParsed) {
             Object.assign(parsed, retryParsed);
             if (/[က-႟]/.test(parsed.text || '')) break;
@@ -1211,7 +1220,8 @@ Return ONLY this JSON:
           body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1000, temperature: attempt.temperature, messages: groundedMessages })
         });
         if (retryRes.ok) {
-          const retryParsed = safeParseJSON((await retryRes.json()).choices[0].message.content, 'text');
+          const retryContent = (await retryRes.json()).choices?.[0]?.message?.content;
+          const retryParsed = retryContent ? safeParseJSON(retryContent, 'text') : null;
           if (retryParsed) {
             Object.assign(parsed, retryParsed);
             if (/[฀-๿]/.test(parsed.text || '')) break;
