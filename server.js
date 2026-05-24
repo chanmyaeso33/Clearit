@@ -426,19 +426,11 @@ function novelWordRatio(sourceText, outputText) {
 
 // ✅ Tesseract.js OCR — runs locally, no API cost.
 // Returns { text, confidence } where confidence is 0–100.
-// Creates a worker per call; terminate() releases WASM memory.
-async function runTesseractOcr(imageBuffer) {
-  const { createWorker } = Tesseract;
-  const worker = await createWorker(['mya', 'eng'], 1 /* OEM: LSTM only */, {
-    langPath: path.join(__dirname, 'tessdata'), // local traineddata files
-    logger: () => {}                            // suppress verbose progress logs
-  });
-  try {
-    const { data } = await worker.recognize(imageBuffer);
-    return { text: (data.text || '').trim(), confidence: data.confidence || 0 };
-  } finally {
-    await worker.terminate();
-  }
+// Accepts an externally-created worker so the caller can terminate it
+// even if a timeout fires before recognition completes.
+async function runTesseractOcr(worker, imageBuffer) {
+  const { data } = await worker.recognize(imageBuffer);
+  return { text: (data.text || '').trim(), confidence: data.confidence || 0 };
 }
 
 // Quality gate for Tesseract output.
@@ -867,16 +859,25 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
     let extractedText;
 
     // ① Tesseract.js — primary path, no API cost
-    // Guarded by TESSERACT_ENABLED env var (set to 'false' to skip) and a 15 s timeout
-    // so a stalled WASM worker never hangs the request on resource-constrained hosts.
-    const tesseractEnabled = process.env.TESSERACT_ENABLED !== 'false';
+    // Opt-in: set TESSERACT_ENABLED=true to activate (off by default so resource-
+    // constrained hosts like Render free tier skip it and go straight to llama-4-scout).
+    // Worker is created outside the timeout race so terminate() can always be called.
+    const tesseractEnabled = process.env.TESSERACT_ENABLED === 'true';
     if (Tesseract && tesseractEnabled) {
       console.log('STEP 1 — Trying Tesseract.js (mya+eng) ...');
+      let tessWorker;
       try {
         const imgBuf = processedSharpBuffer || Buffer.from(processedImageBase64, 'base64');
-        const tessTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Tesseract timeout (15 s)')), 15000));
-        const tess = await Promise.race([runTesseractOcr(imgBuf), tessTimeout]);
+        tessWorker = await Tesseract.createWorker(['mya', 'eng'], 1, {
+          langPath: path.join(__dirname, 'tessdata'),
+          logger: () => {}
+        });
+        let timeoutHandle;
+        const tessTimeout = new Promise((_, reject) => {
+          timeoutHandle = setTimeout(() => reject(new Error('Tesseract timeout (15 s)')), 15000);
+        });
+        const tess = await Promise.race([runTesseractOcr(tessWorker, imgBuf), tessTimeout]);
+        clearTimeout(timeoutHandle);
         const quality = assessTesseractQuality(tess.text, tess.confidence);
         console.log(`STEP 1 — Tesseract result: ${quality.reason} → ${quality.ok ? 'ACCEPTED' : 'REJECTED'}`);
         if (quality.ok) {
@@ -885,6 +886,9 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
         }
       } catch (tessErr) {
         console.warn('STEP 1 — Tesseract error:', tessErr.message);
+      } finally {
+        // Always terminate the worker — frees WASM memory even after a timeout
+        if (tessWorker) tessWorker.terminate().catch(() => {});
       }
     }
 
