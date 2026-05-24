@@ -579,7 +579,7 @@ app.post('/api/scan', async (req, res) => {
     const targetLang = outputLang || 'English';
     const isSummarize = mode === 'summarize';
 
-    console.log('[SCAN] START — lang:', targetLang, 'mode:', mode, 'imageLen:', imageBase64.length);
+    console.log('Scanner 3-step — lang:', targetLang, 'mode:', mode);
 
     // ── STEP 0: Image Preprocessing — auto-rotate, enhance contrast, sharpen ─
     // This is the single biggest quality improvement for real-world photos.
@@ -662,8 +662,6 @@ app.post('/api/scan', async (req, res) => {
       return tesseractText;
     })();
 
-
-    console.log('[SCAN] STEP 0 done — processedImageLen:', processedImageBase64.length);
 
     // ── STEP 1: Extract raw text from the image (vision model) ──────────────
     // Goal: ONLY read what is physically visible. No interpretation. No summary.
@@ -820,9 +818,7 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
       };
 
       // Single-pass OCR on the preprocessed image
-      console.log('[SCAN] STEP 1 — calling runOcr, imageLen:', processedImageBase64.length);
       extractedText = await runOcr(processedImageBase64, '(single-pass)');
-      console.log('[SCAN] STEP 1 — runOcr returned, extractedLen:', (extractedText || '').length);
     }
 
     // Validate: for Burmese output lang, check if extracted text actually contains Burmese
@@ -849,7 +845,7 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
     const hasNoise = true; // Always clean — OCR noise is always present in scanned images
 
     if (hasNoise) {
-      console.log('[SCAN] STEP 1.5 — Running OCR cleanup pass (always on for scan pipeline)...');
+      console.log('STEP 1.5 — Running OCR cleanup pass (always on for scan pipeline)...');
       // STRICT RECONSTRUCTION MODE — preserve, do NOT rewrite
       // Goal: output must stay as close to the original as physically possible
       // The model must NOT paraphrase, normalize, improve, or stylistically alter anything
@@ -1101,7 +1097,7 @@ Return ONLY this JSON:
         messages: groundedMessages
       })
     });
-    console.log('[SCAN] STEP 2+3 — calling grounded simplify, temp:', simplifyTemp, 'lang:', targetLang);
+    console.log('STEP 2+3 — Using temperature:', simplifyTemp, 'for lang:', targetLang);
 
     if (!groundedRes.ok) {
       const error = await groundedRes.json();
