@@ -17,6 +17,16 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Catch crashes that escape route-level try/catch — logs appear in Render dashboard
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.stack || err.message);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason?.stack || reason);
+  process.exit(1);
+});
+
 // ✅ Clean markdown JSON wrappers from model output
 function cleanJsonString(str) {
   return str
@@ -752,18 +762,27 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
       ];
 
       const runOcr = async (imgBase64, label, extraBase64 = null) => {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
-          body: JSON.stringify({
-            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-            max_tokens: 4000,
-            temperature: 0.0,
-            messages: buildOcrMessages(imgBase64)
-          })
-        });
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 25000);
+        let res;
+        try {
+          res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqApiKey}` },
+            signal: controller.signal,
+            body: JSON.stringify({
+              model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+              max_tokens: 4000,
+              temperature: 0.0,
+              messages: buildOcrMessages(imgBase64)
+            })
+          });
+        } finally {
+          clearTimeout(timer);
+        }
         if (!res.ok) { console.warn(`STEP 1 ${label} failed:`, res.status); return ''; }
         const data = await res.json();
+        if (!data.choices || !data.choices[0]) { console.warn(`STEP 1 ${label} — no choices in response`); return ''; }
         const choice = data.choices[0];
         let text = choice.message.content.trim();
         const finishReason = choice.finish_reason;
