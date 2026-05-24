@@ -628,30 +628,15 @@ app.post('/api/scan', async (req, res) => {
       console.log('STEP 0 — Sharp not available, skipping preprocessing');
     }
 
-<<<<<<< HEAD
-    // ── STEP 0.5: Tesseract pre-OCR — character-level anchor ─────────────────
-    // Strong for numbers, dates, Latin/English characters mixed into any document.
-    // Weak for Burmese/Thai scripts — vision LLM corrects those in Step 1.
-    // Result is injected into the Step 1 prompt so the LLM can anchor its output.
-=======
     // ── STEP 0.5: Tesseract pre-OCR — local mya+eng model ────────────────────
     // Runs local Tesseract with Burmese+English trained data for character anchoring.
     // Strong for: numbers, dates, Latin words, and Burmese base characters.
     // Result injected into Step 1 prompt so the vision LLM can anchor its output.
->>>>>>> ac4c443 (feat: add Tesseract.js Step 0.5 with local mya+eng trained data)
     let tesseractText = null;
     if (Tesseract) {
       try {
         const { data: { text } } = await Tesseract.recognize(
           Buffer.from(processedImageBase64, 'base64'),
-<<<<<<< HEAD
-          'eng',
-          { logger: () => {} }
-        );
-        if (text && text.trim().length > 10) {
-          tesseractText = text.trim();
-          console.log('STEP 0.5 — Tesseract pre-OCR:', tesseractText.substring(0, 300));
-=======
           'mya+eng',
           {
             langPath: path.join(__dirname, 'tessdata'),
@@ -662,7 +647,6 @@ app.post('/api/scan', async (req, res) => {
         if (text && text.trim().length > 10) {
           tesseractText = text.trim();
           console.log('STEP 0.5 — Tesseract (mya+eng):', tesseractText.substring(0, 300));
->>>>>>> ac4c443 (feat: add Tesseract.js Step 0.5 with local mya+eng trained data)
         } else {
           console.log('STEP 0.5 — Tesseract returned insufficient text, skipping reference');
         }
@@ -673,11 +657,11 @@ app.post('/api/scan', async (req, res) => {
       console.log('STEP 0.5 — Tesseract not available, skipping pre-OCR');
     }
 
-<<<<<<< HEAD
-    // Quality-gate the Tesseract reference before injecting into the LLM prompt.
-    // eng-only Tesseract on Burmese/Thai images produces garbled Latin that confuses
-    // the vision LLM and causes early stopping. Skip the reference if it looks garbled:
-    // avg word length < 3 or > 40% of tokens are single chars / pure symbols.
+    // Quality-gate: discard Tesseract reference if it looks garbled.
+    // Check 1 — word quality: avgLen < 3 or > 40% junk tokens = garbled Latin output.
+    // Check 2 — Pali ligature ratio: U+1039 (stacked consonant marker) > 5% of Burmese
+    //   chars means the image is Pali-heavy; Tesseract misreads those ligatures and
+    //   injecting the garbled reference degrades the vision LLM output.
     const usableTesseractText = (() => {
       if (!tesseractText) return null;
       const words = tesseractText.split(/\s+/).filter(w => w.length > 0);
@@ -685,15 +669,21 @@ app.post('/api/scan', async (req, res) => {
       const avgLen = words.reduce((s, w) => s + w.length, 0) / words.length;
       const junkRatio = words.filter(w => w.length <= 1 || /^[^a-zA-Z0-9]+$/.test(w)).length / words.length;
       if (avgLen < 3 || junkRatio > 0.4) {
-        console.log('STEP 0.5 — Tesseract reference looks garbled (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%) — skipping injection');
+        console.log('STEP 0.5 — Tesseract reference discarded: garbled (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%)');
         return null;
       }
-      console.log('STEP 0.5 — Tesseract reference usable (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%)');
+      const burmeseChars = (tesseractText.match(/[က-႟]/g) || []).length;
+      const stackedConsonants = (tesseractText.match(/္/g) || []).length;
+      const stackRatio = burmeseChars > 0 ? stackedConsonants / burmeseChars : 0;
+      if (stackRatio > 0.05) {
+        console.log('STEP 0.5 — Tesseract reference discarded: Pali ligature ratio too high', stackRatio.toFixed(2));
+        return null;
+      }
+      console.log('STEP 0.5 — Tesseract reference usable (avgWordLen:', avgLen.toFixed(1), 'junk:', (junkRatio * 100).toFixed(0) + '%, stackRatio:', stackRatio.toFixed(2) + ')');
       return tesseractText;
     })();
 
-=======
->>>>>>> ac4c443 (feat: add Tesseract.js Step 0.5 with local mya+eng trained data)
+
     // ── STEP 1: Extract raw text from the image (vision model) ──────────────
     // Goal: ONLY read what is physically visible. No interpretation. No summary.
     // Script-aware: detect dominant script in output language selection.
@@ -738,23 +728,14 @@ Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the
           },
           {
             type: 'text',
-<<<<<<< HEAD
-            text: `${usableTesseractText ? `TESSERACT PRE-OCR REFERENCE (fast first-pass — use as anchor):
+            text: `${usableTesseractText ? `TESSERACT PRE-OCR REFERENCE (local mya+eng model — use as anchor):
 ${usableTesseractText}
 
-⚠ This reference may have errors for non-Latin scripts (Burmese, Thai). Trust your visual read of the image for those characters. Use this mainly to anchor numbers, dates, and Latin words.
+⚠ This reference may have errors for stacked Burmese diacritics and Pali ligatures. Trust your visual read of the image for those characters. Use this mainly to anchor numbers, dates, and base Burmese/Latin words.
 
 ` : ''}Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
 
 IMPORTANT: Do NOT stop after the first paragraph or first few lines. Read and copy ALL text in the image, including text at the bottom.
-=======
-            text: `${tesseractText ? `TESSERACT PRE-OCR REFERENCE (local mya+eng model — use as anchor):
-${tesseractText}
-
-⚠ This reference may have errors for stacked Burmese diacritics. Trust your visual read of the image for those characters. Use this mainly to anchor numbers, dates, and base Burmese/Latin words.
-
-` : ''}Carefully read every character visible in this image and copy it exactly.
->>>>>>> ac4c443 (feat: add Tesseract.js Step 0.5 with local mya+eng trained data)
 
 Your output must:
 1. Use the SAME script as the image (Myanmar Unicode for Burmese, Thai Unicode for Thai, etc.)
