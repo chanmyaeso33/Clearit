@@ -84,15 +84,31 @@ function toGeminiMessages(messages) {
 // Drop-in replacement for direct Groq fetch calls.
 // On 429 (rate limit): Groq → OpenRouter → Gemini, stopping at the first success.
 async function callLLM({ model, messages, max_tokens, temperature, signal }) {
-  const groqKey = process.env.GROQ_API_KEY;
-  const fetchOpts = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
-    body: JSON.stringify({ model, messages, max_tokens, temperature }),
-    ...(signal ? { signal } : {})
-  };
-  const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', fetchOpts);
-  if (groqRes.status !== 429) return groqRes;
+  // Collect all configured Groq keys; rotate through them on 429
+  const groqKeys = [
+    process.env.GROQ_API_KEY,
+    process.env.GROQ_API_KEY_2,
+  ].filter(Boolean);
+
+  const body = JSON.stringify({ model, messages, max_tokens, temperature });
+  let lastGroq429;
+
+  for (let i = 0; i < groqKeys.length; i++) {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKeys[i]}` },
+      body,
+      ...(signal ? { signal } : {})
+    });
+    if (res.status !== 429) return res;               // success or non-429 error — return as-is
+    lastGroq429 = res;
+    if (i < groqKeys.length - 1) {
+      console.warn(`Groq key ${i + 1} hit 429 on ${model} — rotating to key ${i + 2}`);
+    }
+  }
+
+  // All Groq keys exhausted → try OpenRouter
+  console.warn(`All ${groqKeys.length} Groq key(s) hit 429 on ${model} — trying OpenRouter`);
 
   // Groq 429 → try OpenRouter
   const openrouterKey = process.env.OPENROUTER_API_KEY;
@@ -116,7 +132,7 @@ async function callLLM({ model, messages, max_tokens, temperature, signal }) {
 
   // OpenRouter 429 or not configured → try Gemini
   const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) return groqRes; // no more fallbacks — surface the original 429
+  if (!geminiKey) return lastGroq429; // no more fallbacks — surface the original 429
 
   const geminiModel = GEMINI_MODEL_MAP[model] || 'gemini-2.0-flash';
   console.warn(`Falling back to Gemini (${geminiModel})`);
@@ -136,7 +152,7 @@ async function callLLM({ model, messages, max_tokens, temperature, signal }) {
 
   if (!geminiRes.ok) {
     console.warn(`Gemini fallback failed: ${geminiRes.status}`);
-    return groqRes; // return original 429 if Gemini also fails
+    return lastGroq429; // return original 429 if Gemini also fails
   }
 
   const geminiData = await geminiRes.json();
