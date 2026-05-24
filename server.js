@@ -991,9 +991,9 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
 
       try {
         const cleanupRes = await callLLM({
-          model: 'llama-3.3-70b-versatile',
+          model: 'llama-3.1-8b-instant',
           messages: cleanupMessages,
-          max_tokens: 2000,
+          max_tokens: 800,
           temperature: 0.0
         });
         if (cleanupRes.ok) {
