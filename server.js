@@ -13,14 +13,19 @@ try {
 }
 
 // Tesseract.js — local OCR engine for Burmese/Myanmar text.
-// Primary OCR path; llama-4-scout is only invoked when confidence < 60.
-let Tesseract;
-try {
-  Tesseract = require('tesseract.js');
-  console.log('Tesseract.js loaded');
-} catch(e) {
-  console.warn('Tesseract.js not available — will use llama-4-scout for OCR:', e.message);
-  Tesseract = null;
+// Opt-in: set TESSERACT_ENABLED=true to load and use.
+// Not loaded by default — on Render free tier the WASM worker
+// spawned at require-time crashes the process via unhandledRejection.
+let Tesseract = null;
+if (process.env.TESSERACT_ENABLED === 'true') {
+  try {
+    Tesseract = require('tesseract.js');
+    console.log('Tesseract.js loaded');
+  } catch(e) {
+    console.warn('Tesseract.js load failed — will use llama-4-scout for OCR:', e.message);
+  }
+} else {
+  console.log('Tesseract.js disabled (set TESSERACT_ENABLED=true to enable)');
 }
 
 
