@@ -762,24 +762,23 @@ app.post('/api/scan', async (req, res) => {
         const originalWidth = metadata.width || 1200;
         const originalHeight = metadata.height || 1600;
 
-        // Upscale to minimum 2400px wide — Burmese OCR improves dramatically with upscaling
-        // Stacked characters and diacritics become distinguishable at higher resolution
-        const targetWidth = Math.max(originalWidth * 2, 2400);
+        // Cap output at 1200 px wide — enough for OCR, avoids OOM on Render free tier.
+        // PNG is used instead of JPEG: after threshold() the image is pure B&W, and
+        // PNG compresses that ~10× better than JPEG (50–120 KB vs 500 KB+).
+        const targetWidth = Math.min(Math.max(originalWidth, 1200), 1200);
+        const targetHeight = Math.round(originalHeight * (targetWidth / originalWidth));
 
         const processedBuffer = await sharp(inputBuffer)
           .rotate()                          // auto-rotate using EXIF data
-          .resize({ width: targetWidth,      // 2x upscale — critical for Burmese stacked chars
-                    height: Math.round(originalHeight * (targetWidth / originalWidth)),
-                    fit: 'fill' })
+          .resize({ width: targetWidth, height: targetHeight, fit: 'fill' })
           .grayscale()                       // remove color noise
           .normalize()                       // auto-contrast stretch
-          .sharpen({ sigma: 2.0 })           // stronger sharpening at higher res
-          .threshold(170)                    // binarize: pure black/white (170 better for Burmese)
-          .jpeg({ quality: 95 })             // re-encode as JPEG
+          .sharpen({ sigma: 1.5 })           // sharpen edges
+          .threshold(170)                    // binarize: pure black/white
+          .png({ compressionLevel: 6 })      // PNG: far smaller than JPEG for B&W text
           .toBuffer();
 
-        console.log('STEP 0 — Upscaled from', originalWidth, 'x', originalHeight,
-                    'to', targetWidth, 'px wide');
+        console.log('STEP 0 — Processed to', targetWidth, 'x', targetHeight, 'px (PNG)');
 
         processedImageBase64 = processedBuffer.toString('base64');
         processedSharpBuffer = processedBuffer; // save for two-pass crop
@@ -836,7 +835,7 @@ Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the
         content: [
           {
             type: 'image_url',
-            image_url: { url: `data:image/jpeg;base64,${processedImageBase64}` }
+            image_url: { url: `data:image/png;base64,${processedImageBase64}` }
           },
           {
             type: 'text',
@@ -919,7 +918,7 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
       const buildOcrMessages = (imgBase64) => [
         { role: 'system', content: ocrSystemPrompt },
         { role: 'user', content: [
-          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imgBase64}` } },
+          { type: 'image_url', image_url: { url: `data:image/png;base64,${imgBase64}` } },
           { type: 'text', text: ocrUserText }
         ]}
       ];
