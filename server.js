@@ -7,6 +7,12 @@ const path = require('path');
 let sharp;
 try {
   sharp = require('sharp');
+  // Limit libvips to 1 worker thread — prevents OOM on memory-constrained hosts
+  // (default = all CPU cores; on shared servers that can be 16+ threads × stack memory)
+  sharp.concurrency(1);
+  // Disable all libvips caching — prevents memory accumulation between requests
+  sharp.cache({ memory: 0, files: 0, items: 0 });
+  console.log('Sharp loaded — concurrency: 1, cache: disabled');
 } catch(e) {
   console.warn('Sharp not available — image preprocessing disabled. Run: npm install sharp');
   sharp = null;
@@ -752,13 +758,32 @@ app.post('/api/scan', async (req, res) => {
       try {
         const inputBuffer = Buffer.from(imageBase64, 'base64');
 
+        // ── Magic-byte validation ──────────────────────────────────────────────
+        // libvips calls abort() (kills the Node process) on truly invalid data,
+        // bypassing our try/catch. Validate the image header first.
+        const isPng  = inputBuffer.length > 8  && inputBuffer[0] === 0x89 && inputBuffer[1] === 0x50;
+        const isJpeg = inputBuffer.length > 3  && inputBuffer[0] === 0xFF && inputBuffer[1] === 0xD8;
+        const isWebp = inputBuffer.length > 12 && inputBuffer[0] === 0x52 && inputBuffer[1] === 0x49;
+        const isGif  = inputBuffer.length > 6  && inputBuffer[0] === 0x47 && inputBuffer[1] === 0x49;
+        const isBmp  = inputBuffer.length > 2  && inputBuffer[0] === 0x42 && inputBuffer[1] === 0x4D;
+        const isTiff = inputBuffer.length > 4  &&
+          ((inputBuffer[0] === 0x49 && inputBuffer[1] === 0x49) ||
+           (inputBuffer[0] === 0x4D && inputBuffer[1] === 0x4D));
+        const isValidImageFormat = isPng || isJpeg || isWebp || isGif || isBmp || isTiff;
+
+        if (!isValidImageFormat) {
+          console.warn('STEP 0 — Unrecognised image format (magic-byte check failed) — skipping Sharp to prevent native crash');
+          throw new Error('Unrecognised image format — skipping Sharp');
+        }
+
         // Pipeline: rotate → grayscale → normalize contrast → sharpen → threshold
         // .rotate() with no args uses EXIF orientation data (fixes 90°/180° rotation)
         // .normalize() stretches contrast to full range — fixes washed-out/dark photos
         // .sharpen() improves edge clarity for OCR
-        // .threshold(160) converts to pure black/white — best for text recognition
-        // Get image dimensions for upscaling
-        const metadata = await sharp(inputBuffer).metadata();
+        // .threshold(170) converts to pure black/white — best for text recognition
+        // failOn: 'none' — suppresses libvips abort() on minor image errors (stops process kills)
+        // limitInputPixels: 9MP — prevents OOM on large phone photos (16MP+)
+        const metadata = await sharp(inputBuffer, { failOn: 'none', limitInputPixels: 9000000 }).metadata();
         const originalWidth = metadata.width || 1200;
         const originalHeight = metadata.height || 1600;
 
@@ -768,7 +793,7 @@ app.post('/api/scan', async (req, res) => {
         const targetWidth = Math.min(Math.max(originalWidth, 1200), 1200);
         const targetHeight = Math.round(originalHeight * (targetWidth / originalWidth));
 
-        const processedBuffer = await sharp(inputBuffer)
+        const processedBuffer = await sharp(inputBuffer, { failOn: 'none', limitInputPixels: 9000000 })
           .rotate()                          // auto-rotate using EXIF data
           .resize({ width: targetWidth, height: targetHeight, fit: 'fill' })
           .grayscale()                       // remove color noise
