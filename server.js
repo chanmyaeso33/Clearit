@@ -36,11 +36,11 @@ app.use(express.json({ limit: '10mb' }));
 // Catch crashes that escape route-level try/catch — logs appear in Render dashboard
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err.stack || err.message);
-  process.exit(1);
+  // Do not exit — log and keep serving other requests
 });
 process.on('unhandledRejection', (reason) => {
   console.error('UNHANDLED REJECTION:', reason?.stack || reason);
-  process.exit(1);
+  // Do not exit — log and keep serving other requests
 });
 
 // OpenRouter free-tier equivalents for each Groq model
