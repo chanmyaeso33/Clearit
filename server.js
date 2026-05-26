@@ -7,12 +7,12 @@ const path = require('path');
 let sharp;
 try {
   sharp = require('sharp');
-  // Limit libvips to 1 worker thread — prevents OOM on memory-constrained hosts
-  // (default = all CPU cores; on shared servers that can be 16+ threads × stack memory)
-  sharp.concurrency(1);
-  // Disable all libvips caching — prevents memory accumulation between requests
-  sharp.cache({ memory: 0, files: 0, items: 0 });
-  console.log('Sharp loaded — concurrency: 1, cache: disabled');
+  console.log('Sharp loaded OK');
+  // Limit libvips to 1 worker thread — reduces memory on shared/free-tier hosts
+  // (default = all CPU cores; 16+ threads × their stacks can add up)
+  try { sharp.concurrency(1); console.log('Sharp concurrency: 1'); } catch(e) { console.warn('sharp.concurrency(1) failed:', e.message); }
+  // Disable libvips operation cache to prevent memory accumulation across requests
+  try { sharp.cache(false); console.log('Sharp cache: disabled'); } catch(e) { console.warn('sharp.cache(false) failed:', e.message); }
 } catch(e) {
   console.warn('Sharp not available — image preprocessing disabled. Run: npm install sharp');
   sharp = null;
@@ -1458,7 +1458,7 @@ Return ONLY this JSON:
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ClearIt API v2.5 running ✅', sharp: 'crash-safe' });
+  res.json({ status: 'ClearIt API v2.6 running ✅', sharp: 'crash-safe' });
 });
 
 // ✅ STRIPE — Create checkout session (kept but payment gate disabled on frontend)
