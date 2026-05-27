@@ -875,6 +875,13 @@ Your output must:
 4. Mark any unclear word with [?] immediately after it
 5. Mark any unreadable paragraph as [unreadable section]
 6. Continue reading until the absolute last character in the image — do not stop early
+${(targetLang === 'Burmese') ? `
+MYANMAR/BURMESE IMAGE — CRITICAL EXTRA RULES:
+- Before you start: look at the WHOLE image and count how many rows/lines of text are visible (e.g. "I see 3 lines"). Write that count as your very first line, then extract ALL lines.
+- Myanmar script clusters (stacked characters, vowel signs) — copy each cluster exactly as it appears. Do NOT skip, merge, or truncate any cluster.
+- Your extraction MUST cover every visible row. Stopping after the first sentence is a failure.
+- Format your output as: "LINE COUNT: N\n<line1>\n<line2>...". The cleanup step will strip the count header.` : (targetLang === 'Thai') ? `
+THAI IMAGE — CRITICAL EXTRA RULE: Extract EVERY visible Thai line. Do not stop after the first sentence.` : ''}
 
 Start at the top-left and read to the bottom-right. Output ONLY the raw characters from the image:`
           }
@@ -1002,6 +1009,12 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
       extractedText = await runOcr(processedImageBase64, '(single-pass)');
     }
 
+    // Strip the "LINE COUNT: N" header we asked the OCR model to prepend for Burmese images.
+    // The header helps the model commit to extracting all lines; we discard it before further steps.
+    if (extractedText && targetLang === 'Burmese') {
+      extractedText = extractedText.replace(/^LINE COUNT:\s*\d+\s*\n?/i, '').trimStart();
+    }
+
     // Validate: for Burmese output lang, check if extracted text actually contains Burmese
     const hasBurmese = /[\u1000-\u109F]/.test(extractedText);
     const hasThai = /[\u0E00-\u0E7F]/.test(extractedText);
@@ -1086,9 +1099,15 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
         }
       ];
 
+      // Use 70B for Burmese/Thai cleanup — 8B has weaker Myanmar/Thai Unicode knowledge
+      // and may corrupt complex stacked character clusters when copying them.
+      const cleanupModel = (imageScript === 'Burmese' || imageScript === 'Thai')
+        ? 'llama-3.3-70b-versatile'
+        : 'llama-3.1-8b-instant';
+      console.log('STEP 1.5 — cleanup model:', cleanupModel);
       try {
         const cleanupRes = await callLLM({
-          model: 'llama-3.1-8b-instant',
+          model: cleanupModel,
           messages: cleanupMessages,
           max_tokens: 800,
           temperature: 0.0
@@ -1477,7 +1496,7 @@ Return ONLY this JSON:
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ClearIt API v2.6 running ✅', sharp: 'crash-safe' });
+  res.json({ status: 'ClearIt API v2.7 running ✅', sharp: 'crash-safe' });
 });
 
 // ✅ STRIPE — Create checkout session (kept but payment gate disabled on frontend)
