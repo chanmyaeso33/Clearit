@@ -1020,13 +1020,21 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
     const imageScript = detectScript(extractedText);
     console.log('STEP 1.5 — Image script detected:', imageScript, '| Target output lang:', targetLang);
 
-    // Always run OCR cleanup — Burmese/Thai corruption doesn't always produce [?] markers
-    // Broken Unicode combining marks and spacing corruption are invisible without cleanup
+    // Detect whether the OCR output actually needs cleanup.
+    // For clean Latin/English text from a high-quality image: skip the LLM call entirely.
+    // For Burmese/Thai: always run — combining-mark corruption is invisible without cleanup.
+    const hasOcrArtifacts = (
+      extractedText.includes('[?]') ||                     // uncertain chars marked by OCR
+      extractedText.includes('[unreadable') ||             // unreadable-section markers
+      /[■-◿�\x00-\x08\x0B\x0C\x0E-\x1F]/.test(extractedText) || // box/garbage chars
+      imageScript === 'Burmese' ||                         // always clean Myanmar script
+      imageScript === 'Thai'                               // always clean Thai script
+    );
     let cleanedText = extractedText;
-    const hasNoise = true; // Always clean — OCR noise is always present in scanned images
+    const hasNoise = hasOcrArtifacts;
 
     if (hasNoise) {
-      console.log('STEP 1.5 — Running OCR cleanup pass (always on for scan pipeline)...');
+      console.log('STEP 1.5 — Running OCR cleanup pass (artifacts detected or non-Latin script)...');
       // STRICT RECONSTRUCTION MODE — preserve, do NOT rewrite
       // Goal: output must stay as close to the original as physically possible
       // The model must NOT paraphrase, normalize, improve, or stylistically alter anything
@@ -1110,6 +1118,8 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
         console.warn('STEP 1.5 cleanup failed, using raw OCR:', e.message);
         // Fall through — use raw extractedText
       }
+    } else {
+      console.log('STEP 1.5 — Skipping cleanup (clean OCR output detected, no artifacts)');
     }
 
     // ── STEP 1.6: Unicode sanity check for Burmese ───────────────────────────
@@ -1258,14 +1268,23 @@ Return ONLY this JSON:
       }
     ];
 
-    // Temperature per stage (ChatGPT recommendation):
+    // Temperature per stage:
     // OCR repair: 0.0 | Simplification: 0.2 | Translation/Burmese: 0.1
     const simplifyTemp = targetLang === 'English' ? 0.2 : 0.1;
-    // English gets slightly more fluency freedom (0.2)
-    // Burmese/Thai stays at 0.1 — script accuracy more important than fluency
+
+    // Model selection for STEP 2+3 simplification:
+    // English→English: use llama-3.1-8b-instant (same as cleanup).
+    //   - Same language, clean OCR text, simpler task — 8B is sufficient and much faster.
+    //   - Typical savings: 8–15 s per request vs 70B.
+    // All other combos (Burmese, Thai, cross-language): keep llama-3.3-70b-versatile.
+    //   - Non-Latin scripts and cross-language output need the larger model's accuracy.
+    const simplifyModel = (imageScript === 'English' && targetLang === 'English')
+      ? 'llama-3.1-8b-instant'
+      : 'llama-3.3-70b-versatile';
+    console.log('STEP 2+3 — model:', simplifyModel, '| temp:', simplifyTemp, '| lang:', targetLang);
 
     const groundedRes = await callLLM({
-      model: 'llama-3.3-70b-versatile',
+      model: simplifyModel,
       messages: groundedMessages,
       max_tokens: 1000,
       temperature: simplifyTemp
