@@ -1495,6 +1495,57 @@ Return ONLY this JSON:
   }
 });
 
+// ✅ FEEDBACK — store like/dislike on a result into Supabase
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { user_key, input_text, output_text, language, mood, rating, mode } = req.body;
+
+    if (!rating || !['like', 'dislike'].includes(rating)) {
+      return res.status(400).json({ error: 'rating must be "like" or "dislike"' });
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bblbecczygnnpnvhccub.supabase.co';
+    // Anon key is intentionally public (access-controlled by Supabase RLS)
+    const supabaseKey = process.env.SUPABASE_KEY ||
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibGJlY2N6eWdubnBudmhjY3ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2OTcwOTIsImV4cCI6MjA5MzI3MzA5Mn0.9EiUmjVm29VKfbQJx3xKEVJTtSZVdWe6uFU74E2iy8Q';
+
+    const payload = {
+      user_key:    (user_key    || 'anonymous').substring(0, 128),
+      input_text:  (input_text  || '').substring(0, 500),
+      output_text: (output_text || '').substring(0, 500),
+      language:    (language    || 'Unknown').substring(0, 64),
+      mood:        (mood        || 'Tech').substring(0, 64),
+      rating,
+      mode:        (mode        || 'simplify').substring(0, 32),
+      created_at:  new Date().toISOString()
+    };
+
+    const sbRes = await fetch(`${supabaseUrl}/rest/v1/feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!sbRes.ok) {
+      const errText = await sbRes.text();
+      console.error('Supabase feedback insert failed:', sbRes.status, errText.substring(0, 200));
+      return res.status(502).json({ error: 'Failed to save feedback' });
+    }
+
+    console.log(`Feedback saved: ${rating} | lang:${payload.language} | mood:${payload.mood} | mode:${payload.mode}`);
+    return res.status(200).json({ ok: true });
+
+  } catch (error) {
+    console.error('Feedback error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/', (req, res) => {
   res.json({ status: 'ClearIt API v2.7 running ✅', sharp: 'crash-safe' });
 });

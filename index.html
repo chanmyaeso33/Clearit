@@ -691,6 +691,17 @@ textarea::placeholder { color: var(--app-muted); }
 .copy-btn, .share-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--app-border); border-radius: 8px; padding: 6px 14px; color: var(--app-text); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
 .copy-btn:hover, .share-btn:hover { background: rgba(255,255,255,0.12); }
 
+/* FEEDBACK */
+.feedback-row { display: flex; align-items: center; gap: 10px; padding-top: 12px; margin-top: 2px; border-top: 1px solid var(--app-border); transition: border-color var(--app-transition); }
+.feedback-label { font-size: 11px; color: var(--app-muted); transition: color var(--app-transition); }
+.feedback-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--app-border); border-radius: 8px; padding: 5px 12px; font-size: 15px; line-height: 1; cursor: pointer; transition: all 0.18s; }
+.feedback-btn:hover:not(:disabled) { background: rgba(255,255,255,0.14); transform: scale(1.12); }
+.feedback-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+.feedback-btn.selected-like  { background: rgba(100,220,120,0.18); border-color: rgba(100,220,120,0.5); }
+.feedback-btn.selected-dislike { background: rgba(255,100,100,0.15); border-color: rgba(255,100,100,0.4); }
+.feedback-thanks { font-size: 12px; color: var(--app-accent); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.feedback-thanks.visible { opacity: 1; }
+
 /* HISTORY */
 .history-section { width: 100%; margin-top: 36px; display: none; }
 .history-section.visible { display: block; }
@@ -1131,6 +1142,12 @@ textarea::placeholder { color: var(--app-muted); }
           <button class="copy-btn" onclick="copyResult()">Copy</button>
         </div>
       </div>
+      <div class="feedback-row" id="feedbackRow">
+        <span class="feedback-label">Was this helpful?</span>
+        <button class="feedback-btn" id="likeBtn"    onclick="submitFeedback('like')"    title="Helpful">👍</button>
+        <button class="feedback-btn" id="dislikeBtn" onclick="submitFeedback('dislike')" title="Not helpful">👎</button>
+        <span class="feedback-thanks" id="feedbackThanks">Thanks for your feedback!</span>
+      </div>
     </div>
 
     <div class="history-section" id="historySection">
@@ -1474,6 +1491,7 @@ textarea::placeholder { color: var(--app-muted); }
   // ---- APP LOGIC ----
   let historyItems = [];
   let currentResult = null;
+  let currentInputText = '';
   let currentMode = 'simplify';
 
   // ---- MODE SWITCHING ----
@@ -1666,6 +1684,53 @@ textarea::placeholder { color: var(--app-muted); }
     }
   }
 
+  function resetFeedback() {
+    const likeBtn    = document.getElementById('likeBtn');
+    const dislikeBtn = document.getElementById('dislikeBtn');
+    const thanks     = document.getElementById('feedbackThanks');
+    if (!likeBtn) return;
+    likeBtn.disabled    = false;
+    dislikeBtn.disabled = false;
+    likeBtn.classList.remove('selected-like', 'selected-dislike');
+    dislikeBtn.classList.remove('selected-like', 'selected-dislike');
+    thanks.classList.remove('visible');
+  }
+
+  async function submitFeedback(rating) {
+    if (!currentResult) return;
+    const likeBtn    = document.getElementById('likeBtn');
+    const dislikeBtn = document.getElementById('dislikeBtn');
+    const thanks     = document.getElementById('feedbackThanks');
+
+    // Disable both immediately to prevent double-click
+    likeBtn.disabled    = true;
+    dislikeBtn.disabled = true;
+    (rating === 'like' ? likeBtn : dislikeBtn).classList.add('selected-' + rating);
+
+    try {
+      var userKey = (typeof currentUser !== 'undefined' && currentUser && currentUser.id)
+        ? currentUser.id : getUserKey();
+      await fetch('https://clearit-xezb.onrender.com/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_key:    userKey,
+          input_text:  currentInputText,
+          output_text: currentResult.simplified || '',
+          language:    currentResult.language   || 'Unknown',
+          mood:        (currentResult.theme && currentResult.theme.mood) || 'Tech',
+          rating,
+          mode:        currentResult.mode || currentMode
+        })
+      });
+    } catch (e) {
+      console.warn('Feedback send failed (non-critical):', e.message);
+    }
+
+    // Show confirmation regardless of network outcome
+    thanks.classList.add('visible');
+  }
+
   function addToHistory(result, inputText) {
     historyItems.unshift({
       simplified: result.simplified, language: result.language,
@@ -1753,6 +1818,7 @@ textarea::placeholder { color: var(--app-muted); }
       }
 
       currentResult = result;
+      currentInputText = inputText;
       result.simplified = outputText;
       result.mode = currentMode;
 
@@ -1763,6 +1829,7 @@ textarea::placeholder { color: var(--app-muted); }
       document.getElementById('resultText').textContent = outputText;
       resultCard.style.display = 'block';
       resultCard.classList.add('visible');
+      resetFeedback();
       addToHistory(result, inputText);
 
     } catch (err) {
@@ -1856,7 +1923,9 @@ textarea::placeholder { color: var(--app-muted); }
       }
 
       currentResult = result;
+      currentInputText = '[Scanned image]';
       result.simplified = outputText;
+      result.mode = currentMode;
 
       applyTheme(result.theme);
       // Show OUTPUT language (user selection), not detected image script
@@ -1866,6 +1935,7 @@ textarea::placeholder { color: var(--app-muted); }
       document.getElementById('resultText').textContent = outputText;
       resultCard.style.display = 'block';
       resultCard.classList.add('visible');
+      resetFeedback();
       addToHistory(result, '[Scanned image]');
 
       // Show re-simplify hint — user can pick another language and tap Simplify It
