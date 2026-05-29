@@ -470,12 +470,15 @@ app.post('/api/simplify', async (req, res) => {
     const groqApiKey = process.env.GROQ_API_KEY;
     if (!groqApiKey) return res.status(500).json({ error: 'API key not configured' });
 
-    let { text, outputLang, mode, messages } = req.body;
+    let { text, outputLang, mode, messages, level } = req.body;
 
     // Support both new simple format and old messages format
     const targetLang = outputLang || 'English';
     const isSummarize = mode === 'summarize';
     const fieldName = isSummarize ? 'summary' : 'simplified';
+
+    // Simplification depth level — 'simple' | 'standard' | 'detailed'
+    const simplifyLevel = ['simple', 'standard', 'detailed'].includes(level) ? level : 'standard';
 
     // Get input text from simple format or messages format
     const inputText = text || '';
@@ -483,7 +486,37 @@ app.post('/api/simplify', async (req, res) => {
 
     console.log('Input text:', inputText.substring(0, 100));
     console.log('Output lang:', targetLang);
-    console.log('Mode:', mode || 'simplify');
+    console.log('Mode:', mode || 'simplify', '| Level:', simplifyLevel);
+
+    // ── Per-level prompt additions ────────────────────────────────────────
+    const levelSystemHint = {
+      simple:
+        '\n\nSIMPLIFICATION LEVEL: SIMPLE\n' +
+        '- Use only everyday vocabulary — Grade 5 reading level or lower\n' +
+        '- Keep sentences short: 12 words or fewer each\n' +
+        '- Replace every technical term and piece of jargon with a plain everyday equivalent\n' +
+        '- Use active voice. One idea per sentence.\n' +
+        '- Clarity beats completeness: drop minor nuance if it makes the core point much clearer\n' +
+        '- Target reader: basic literacy, ESL learner, or a curious 12-year-old',
+      standard: '', // default — current behaviour unchanged
+      detailed:
+        '\n\nSIMPLIFICATION LEVEL: DETAILED\n' +
+        '- Preserve ALL nuance, qualifications, and technical precision from the source\n' +
+        '- When a technical or domain-specific term first appears, add a short inline definition in parentheses — e.g. "mitigation (reducing the harm)"\n' +
+        '- Maintain every causal chain, conditional, and logical relationship\n' +
+        '- Longer output is acceptable when it improves accuracy\n' +
+        '- Do NOT simplify away precision — the reader should finish with a complete, accurate understanding\n' +
+        '- Target reader: educated adult who wants the full picture, not just the gist'
+    };
+
+    const levelUserHint = {
+      simple:   '\n\nOUTPUT LEVEL — SIMPLE: Everyday words only. ≤12 words per sentence. Zero jargon. Crystal clear.',
+      standard: '',
+      detailed: '\n\nOUTPUT LEVEL — DETAILED: Keep all precision. Define technical terms inline in parentheses. Preserve every nuance and qualification.'
+    };
+
+    // Temperature per level: simple→0.3 (creative rephrasing), standard→0.2, detailed→0.1 (precise)
+    const levelTemp = { simple: 0.3, standard: 0.2, detailed: 0.1 };
 
     // ✅ PRODUCTION-GRADE PROMPT SYSTEM v4
     const langInstruction = targetLang === 'Burmese'
@@ -528,7 +561,7 @@ REFERENCE QUALITY EXAMPLE (aim for this level):
       {
         role: 'system',
         content: `You are an expert multilingual text summarization system.
-${langInstruction}
+${langInstruction}${levelSystemHint[simplifyLevel]}
 Respond ONLY with a valid JSON object. No markdown. No explanation. No backticks.`
       },
       {
@@ -557,7 +590,7 @@ INPUT TEXT:
 """
 ${inputText}
 """
-
+${levelUserHint[simplifyLevel]}
 Return ONLY this JSON:
 {"text":"your complete summary in ${targetLang}","lang":"language of the input text","topic":"one of: Tech Legal Science Health Finance Education Food Politics Philosophy Creative News Business Culture"}`
       }
@@ -565,7 +598,7 @@ Return ONLY this JSON:
       {
         role: 'system',
         content: `You are a production-grade multilingual text simplification system.
-${langInstruction}
+${langInstruction}${levelSystemHint[simplifyLevel]}
 Respond ONLY with a valid JSON object. No markdown. No explanation. No backticks.`
       },
       {
@@ -607,7 +640,7 @@ INPUT TEXT:
 """
 ${inputText}
 """
-
+${levelUserHint[simplifyLevel]}
 Return ONLY this JSON:
 {"text":"your natural, precise simplified version in ${targetLang}","lang":"language of the input text","topic":"one of: Tech Legal Science Health Finance Education Food Politics Philosophy Creative News Business Culture"}`
       }
@@ -617,7 +650,7 @@ Return ONLY this JSON:
       model: 'llama-3.3-70b-versatile',
       messages: simplifyMessages,
       max_tokens: 2000,
-      temperature: 0.2
+      temperature: levelTemp[simplifyLevel]
     });
 
     if (!groqRes.ok) {

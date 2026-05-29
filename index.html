@@ -521,6 +521,35 @@ textarea::placeholder { color: var(--app-muted); }
   text-align: center;
 }
 
+/* LEVEL TOGGLE */
+.level-row {
+  width: 100%; display: flex; align-items: center;
+  gap: 10px; margin-bottom: 14px;
+}
+.level-row-label {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--app-muted); white-space: nowrap; flex-shrink: 0;
+  transition: color var(--app-transition);
+}
+.level-toggle { display: flex; gap: 6px; flex: 1; }
+.level-btn {
+  flex: 1; background: var(--app-surface);
+  border: 1.5px solid var(--app-border);
+  border-radius: 8px; padding: 8px 6px;
+  font-size: 12px; font-weight: 600; line-height: 1.3;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--app-muted); cursor: pointer;
+  transition: all 0.2s; text-align: center;
+}
+.level-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--app-text); }
+.level-btn.active {
+  background: rgba(200,240,80,0.08);
+  border-color: var(--app-accent);
+  color: var(--app-accent);
+}
+.level-btn .level-icon { display: block; font-size: 14px; margin-bottom: 2px; }
+.level-btn .level-name { display: block; }
+
 /* OUTPUT LANGUAGE SELECTOR */
 .lang-select-row {
   width: 100%; margin-bottom: 14px;
@@ -1078,6 +1107,22 @@ textarea::placeholder { color: var(--app-muted); }
       </button>
     </div>
 
+    <!-- LEVEL TOGGLE -->
+    <div class="level-row">
+      <span class="level-row-label">Depth</span>
+      <div class="level-toggle">
+        <button class="level-btn" data-level="simple"   onclick="setLevel('simple')">
+          <span class="level-icon">🟢</span><span class="level-name">Simple</span>
+        </button>
+        <button class="level-btn active" data-level="standard"  onclick="setLevel('standard')">
+          <span class="level-icon">⚡</span><span class="level-name">Standard</span>
+        </button>
+        <button class="level-btn" data-level="detailed" onclick="setLevel('detailed')">
+          <span class="level-icon">🔬</span><span class="level-name">Detailed</span>
+        </button>
+      </div>
+    </div>
+
     <!-- OUTPUT LANGUAGE SELECTOR -->
     <div class="lang-select-row">
       <div class="lang-select-label" id="langSelectLabel">✦ Simplify output in</div>
@@ -1493,6 +1538,14 @@ textarea::placeholder { color: var(--app-muted); }
   let currentResult = null;
   let currentInputText = '';
   let currentMode = 'simplify';
+  let currentLevel = 'standard';
+
+  // ---- LEVEL SWITCHING ----
+  function setLevel(level) {
+    currentLevel = level;
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.level-btn[data-level="${level}"]`).classList.add('active');
+  }
 
   // ---- MODE SWITCHING ----
   function setMode(mode) {
@@ -1802,7 +1855,7 @@ textarea::placeholder { color: var(--app-muted); }
       const res = await fetch('https://clearit-xezb.onrender.com/api/simplify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: inputText, outputLang: outputLang, mode: currentMode })
+        body: JSON.stringify({ text: inputText, outputLang: outputLang, mode: currentMode, level: currentLevel })
       });
 
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Server error ' + res.status); }
