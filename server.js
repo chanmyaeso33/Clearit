@@ -1528,6 +1528,119 @@ Return ONLY this JSON:
   }
 });
 
+// ✅ EXPLAIN — annotate difficult words inline: "word [word = plain definition]"
+app.post('/api/explain', async (req, res) => {
+  try {
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (!groqApiKey) return res.status(500).json({ error: 'API key not configured' });
+
+    const { text, outputLang } = req.body;
+    const targetLang = outputLang || 'English';
+    const inputText  = (text || '').trim();
+    if (!inputText) return res.status(400).json({ error: 'No text provided' });
+
+    console.log('[explain] lang:', targetLang, 'input:', inputText.substring(0, 80));
+
+    const explainMessages = [
+      {
+        role: 'system',
+        content: `You are an expert vocabulary-annotation assistant.
+Your job is to reproduce the original text EXACTLY, inserting short inline explanations for difficult or technical words.
+Annotation format: place [word = short plain definition] immediately after the difficult word's FIRST occurrence only.
+Definitions MUST be written in ${targetLang}.
+Respond ONLY with a valid JSON object. No markdown. No backticks.`
+      },
+      {
+        role: 'user',
+        content: `Step 1: Identify 3–8 difficult, technical, or uncommon words in this text that a non-expert reader would benefit from having explained. Skip simple everyday words.
+
+Step 2: Reproduce the EXACT original text — do not change a single word, letter, or punctuation mark — and insert [word = plain definition in ${targetLang}] immediately after each identified word's FIRST occurrence only.
+
+CRITICAL RULES:
+- Copy the original text character-for-character. ONLY insertions of [word = definition] are allowed.
+- Annotate each difficult word only once (first occurrence).
+- Definition: 3–8 words max, written in ${targetLang}, no jargon.
+- Do NOT annotate common words (the, is, and, can, not, etc.).
+- Preserve all original line breaks and paragraph structure.
+- Good examples:
+    "mitigation [mitigation = reducing harm or damage]"
+    "photosynthesis [photosynthesis = how plants make food from light]"
+    "anthropogenic [anthropogenic = caused by human activity]"
+
+INPUT TEXT:
+"""
+${inputText}
+"""
+
+Return ONLY this JSON:
+{"text":"original text with inline [word = definition] annotations","lang":"detected language of the input text","topic":"one of: Tech Legal Science Health Finance Education Food Politics Philosophy Creative News Business Culture"}`
+      }
+    ];
+
+    const groqRes = await callLLM({
+      model: 'llama-3.3-70b-versatile',
+      messages: explainMessages,
+      max_tokens: Math.min(4096, inputText.length * 4 + 1200),
+      temperature: 0.1
+    });
+
+    if (!groqRes.ok) {
+      const error = await groqRes.json();
+      return res.status(groqRes.status).json({ error: error.error?.message || 'LLM error' });
+    }
+
+    const groqData = await groqRes.json();
+    const raw = groqData.choices[0].message.content;
+    console.log('[explain] raw output:', raw.substring(0, 400));
+
+    let parsed = safeParseJSON(raw, 'text');
+    if (!parsed) {
+      parsed = { text: inputText, language: 'Unknown', topic: 'Tech' };
+    }
+
+    const explainedText = parsed.text || inputText;
+    const topic = parsed.topic || 'Tech';
+    const inputLang = parsed.lang || parsed.language || 'Unknown';
+
+    const themeMap = {
+      'Tech':        { bg: '#061420', surface: '#0d1f2d', accent: '#00d4ff' },
+      'Legal':       { bg: '#0d0d14', surface: '#14141f', accent: '#c8a44a' },
+      'Science':     { bg: '#061420', surface: '#0a1f2e', accent: '#4dd0e1' },
+      'Health':      { bg: '#061a0d', surface: '#0d2414', accent: '#4caf50' },
+      'Finance':     { bg: '#0a0d1a', surface: '#111428', accent: '#7986cb' },
+      'Education':   { bg: '#0d1014', surface: '#141c24', accent: '#42a5f5' },
+      'Food':        { bg: '#1a0e00', surface: '#241400', accent: '#ff8f00' },
+      'Politics':    { bg: '#1a0505', surface: '#240808', accent: '#ef5350' },
+      'Philosophy':  { bg: '#0d0a1a', surface: '#140f24', accent: '#9c27b0' },
+      'Creative':    { bg: '#1a0a12', surface: '#240f1a', accent: '#f06292' },
+      'News':        { bg: '#0a0a0a', surface: '#141414', accent: '#ff7043' },
+      'Business':    { bg: '#0a1014', surface: '#111820', accent: '#26c6da' },
+      'Culture':     { bg: '#1a0a14', surface: '#240f1a', accent: '#ff6b9d' }
+    };
+    const theme = themeMap[topic] || themeMap['Tech'];
+
+    return res.status(200).json({
+      explained: explainedText,
+      simplified: explainedText,
+      text: explainedText,
+      language: inputLang,
+      theme: {
+        mood: topic,
+        bg: theme.bg,
+        surface: theme.surface,
+        text: '#f0ede8',
+        accent: theme.accent,
+        muted: 'rgba(240,237,232,0.45)',
+        border: 'rgba(255,255,255,0.08)'
+      }
+    });
+
+  } catch (error) {
+    console.error('[explain] error:', error.message);
+    return res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
 // ✅ FEEDBACK — store like/dislike on a result into Supabase
 app.post('/api/feedback', async (req, res) => {
   try {
@@ -1580,7 +1693,7 @@ app.post('/api/feedback', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ClearIt API v2.7 running ✅', sharp: 'crash-safe' });
+  res.json({ status: 'ClearIt API v2.8 running ✅', sharp: 'crash-safe' });
 });
 
 // ✅ STRIPE — Create checkout session (kept but payment gate disabled on frontend)
