@@ -869,10 +869,20 @@ IMPORTANT: Do NOT assume the script based on the output language — read what i
 - Rotated or sideways text: read it from ALL angles — rotate mentally to read it
 - The image may be rotated 90° or 180° — still extract all visible text`;
 
-    const extractMessages = [
-      {
-        role: 'system',
-        content: `You are a precision OCR system specialized in multilingual text extraction.
+    // Burmese gets a focused role-play prompt — simpler, more direct.
+    // Generic multilingual prompt is kept for all other languages.
+    const extractSysPrompt = (targetLang === 'Burmese')
+      ? `You are a Burmese OCR engine.
+
+Rules:
+1. Extract every visible Burmese character.
+2. Preserve original line breaks.
+3. Do not translate.
+4. Do not summarize.
+5. Do not correct spelling.
+6. Output only extracted Burmese text.
+7. If uncertain, copy the closest visible character.`
+      : `You are a precision OCR system specialized in multilingual text extraction.
 Your ONLY job is to copy text from images exactly as it appears — character by character.
 
 ${scriptHint}
@@ -886,18 +896,11 @@ ABSOLUTE RULES:
 - If a full section is unreadable, write [unreadable section]
 - Preserve original script, punctuation, paragraph numbers, and line breaks
 
-Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the characters from the image.`
-      },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image_url',
-            image_url: { url: `data:image/png;base64,${processedImageBase64}` }
-          },
-          {
-            type: 'text',
-            text: `Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
+Output ONLY the raw extracted text. No labels. No JSON. No explanation. Just the characters from the image.`;
+
+    const extractUserText = (targetLang === 'Burmese')
+      ? `Extract all Burmese text from this image. Read every line from top to bottom, left to right. Do not stop early — extract EVERY visible line including the very last line of the image.`
+      : `Carefully read EVERY character visible in this image — from the VERY FIRST line to the VERY LAST line — and copy it all exactly.
 
 IMPORTANT: Do NOT stop after the first paragraph or first few lines. Read and copy ALL text in the image, including text at the bottom.
 
@@ -908,16 +911,21 @@ Your output must:
 4. Mark any unclear word with [?] immediately after it
 5. Mark any unreadable paragraph as [unreadable section]
 6. Continue reading until the absolute last character in the image — do not stop early
-${(targetLang === 'Burmese') ? `
-MYANMAR/BURMESE IMAGE — CRITICAL EXTRA RULES:
-- Before you start: look at the WHOLE image and count how many rows/lines of text are visible (e.g. "I see 3 lines"). Write that count as your very first line, then extract ALL lines.
-- Myanmar script clusters (stacked characters, vowel signs) — copy each cluster exactly as it appears. Do NOT skip, merge, or truncate any cluster.
-- Your extraction MUST cover every visible row. Stopping after the first sentence is a failure.
-- Format your output as: "LINE COUNT: N\n<line1>\n<line2>...". The cleanup step will strip the count header.` : (targetLang === 'Thai') ? `
+${(targetLang === 'Thai') ? `
 THAI IMAGE — CRITICAL EXTRA RULE: Extract EVERY visible Thai line. Do not stop after the first sentence.` : ''}
 
-Start at the top-left and read to the bottom-right. Output ONLY the raw characters from the image:`
-          }
+Start at the top-left and read to the bottom-right. Output ONLY the raw characters from the image:`;
+
+    const extractMessages = [
+      { role: 'system', content: extractSysPrompt },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/png;base64,${processedImageBase64}` }
+          },
+          { type: 'text', text: extractUserText }
         ]
       }
     ];
@@ -1081,44 +1089,39 @@ Start at the top-left and read to the bottom-right. Output ONLY the raw characte
 
     if (hasNoise) {
       console.log('STEP 1.5 — Running OCR cleanup pass (artifacts detected or non-Latin script)...');
-      // STRICT RECONSTRUCTION MODE — preserve, do NOT rewrite
-      // Goal: output must stay as close to the original as physically possible
-      // The model must NOT paraphrase, normalize, improve, or stylistically alter anything
-      const cleanupMessages = [
-        {
-          role: 'system',
-          content: `You are a MINIMAL OCR artifact remover for ${imageScript} text. You are NOT a language model assistant. You do NOT improve text.
+      // Burmese gets a focused proofreader prompt; other scripts keep the strict artifact-only remover.
+      const cleanupSysPrompt = (imageScript === 'Burmese')
+        ? `You are a Burmese proofreader.
+
+Correct OCR mistakes while preserving meaning.
+Do not rewrite sentences.
+Only fix obvious character-level OCR errors.`
+        : `You are a MINIMAL OCR artifact remover for ${imageScript} text. You are NOT a language model assistant. You do NOT improve text.
 
 Your ONLY permitted action: replace characters that are physically broken scanning artifacts (box glyphs □, replacement chars ?, garbled bytes) with the correct character where it is 100% unambiguous from context.
 
 HARD PROHIBITIONS — never do any of these:
-- NEVER change a vowel sign (ာ ါ ိ ီ ု ူ ဲ ့ ် ြ ျ ွ ှ) unless it is literally a box □ or garbage byte
-- NEVER add a vowel sign that is not in the input
-- NEVER remove a vowel sign that is in the input
+- NEVER change a vowel sign unless it is literally a box □ or garbage byte
+- NEVER add or remove vowel signs
 - NEVER change word stems, roots, or base consonants
 - NEVER rewrite, paraphrase, or rephrase any part of any sentence
 - NEVER complete a sentence that trails off — leave it as-is
 - NEVER summarize or shorten
 - NEVER improve grammar or style
-- NEVER normalize "unusual" phrasing — it may be correct in the source document
 - NEVER invent or guess missing words
 - NEVER change numbers, dates, currencies, or names
 - NEVER remove [?] markers — keep them as-is
-- NEVER add punctuation not present in the input
 - NEVER merge or split words
 
-LINE COUNT RULE: Your output must have exactly the same number of lines as the input. Adding or removing lines is a failure.
+LINE COUNT RULE: Your output must have exactly the same number of lines as the input.
+CHARACTER COUNT RULE: Your output character count must be within 5% of the input.
+NO NOTES: Output ONLY the corrected text — nothing else.
 
-CHARACTER COUNT RULE: Your output character count must be within 5% of the input character count. Large differences mean you rewrote instead of repaired.
+When in doubt: copy. Do not repair. Do not improve.`;
 
-NO NOTES OR COMMENTS: Do NOT add any note, explanation, comment, or annotation about what you changed or why. Output ONLY the corrected text — nothing else.
-
-If you are not 100% certain a character is a physical OCR artifact, COPY IT EXACTLY.
-When in doubt: copy. Do not repair. Do not improve.`
-        },
-        {
-          role: 'user',
-          content: `MINIMAL ARTIFACT REMOVAL TASK:
+      const cleanupUserContent = (imageScript === 'Burmese')
+        ? `Fix OCR errors in this Burmese text. Only change obvious character-level mistakes. Do not rewrite anything.\n\n${extractedText}`
+        : `MINIMAL ARTIFACT REMOVAL TASK:
 Copy this ${imageScript} text exactly. Replace ONLY characters that are physically broken scanning artifacts (box glyphs, replacement chars, garbled bytes) where the correct character is 100% unambiguous.
 
 COPY EVERYTHING ELSE EXACTLY — including unusual phrasing, incomplete sentences, and [?] markers.
@@ -1128,8 +1131,11 @@ INPUT LINE COUNT: ${extractedText.split('\n').length} lines — your output must
 SOURCE OCR TEXT:
 ${extractedText}
 
-Output the text with ONLY broken artifact characters replaced. Everything else must be byte-for-byte identical to the input:`
-        }
+Output the text with ONLY broken artifact characters replaced. Everything else must be byte-for-byte identical to the input:`;
+
+      const cleanupMessages = [
+        { role: 'system', content: cleanupSysPrompt },
+        { role: 'user', content: cleanupUserContent }
       ];
 
       // Use 70B for Burmese/Thai cleanup — 8B has weaker Myanmar/Thai Unicode knowledge
