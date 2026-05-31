@@ -1553,6 +1553,38 @@ textarea::placeholder { color: var(--app-muted); }
     currentLevel = level;
   }
 
+  // ---- 429 COUNTDOWN AUTO-RETRY ----
+  let _429Timer = null;
+
+  function clear429Timer() {
+    if (_429Timer) { clearInterval(_429Timer); _429Timer = null; }
+  }
+
+  function show429Error(retryFn) {
+    clear429Timer();
+    const errorMsg = document.getElementById('errorMsg');
+    let secs = 60;
+
+    function render() {
+      errorMsg.innerHTML =
+        `⏳ ClearIt is taking a short break — AI is in high demand right now. ` +
+        `Retrying in <strong style="color:#ffc080">${secs}s</strong>…`;
+      errorMsg.classList.add('visible');
+    }
+
+    render();
+    _429Timer = setInterval(() => {
+      secs--;
+      if (secs <= 0) {
+        clear429Timer();
+        errorMsg.classList.remove('visible');
+        retryFn();
+      } else {
+        render();
+      }
+    }, 1000);
+  }
+
   // ---- EXPLAIN RENDERER ----
   // Converts "[word = definition]" annotations into styled HTML spans.
   // All non-annotation text is HTML-escaped for safety.
@@ -1867,6 +1899,7 @@ textarea::placeholder { color: var(--app-muted); }
     const errorMsg = document.getElementById('errorMsg');
     const resultCard = document.getElementById('resultCard');
 
+    clear429Timer();
     errorMsg.classList.remove('visible');
 
     const modeVerb = currentMode === 'explain' ? 'explain' : currentMode === 'summarize' ? 'summarize' : 'simplify';
@@ -1924,11 +1957,13 @@ textarea::placeholder { color: var(--app-muted); }
       addToHistory(result, inputText);
 
     } catch (err) {
-      let msg = err.message;
-      if (msg.includes('429')) msg = 'Too many requests. Please wait a moment and try again.';
-      if (msg.includes('JSON')) msg = 'Unexpected response. Please try again.';
-      errorMsg.textContent = '⚠️ ' + msg;
-      errorMsg.classList.add('visible');
+      const msg = err.message;
+      if (msg.includes('429')) {
+        show429Error(() => simplify());
+      } else {
+        errorMsg.textContent = '⚠️ ' + (msg.includes('JSON') ? 'Unexpected response. Please try again.' : msg);
+        errorMsg.classList.add('visible');
+      }
     } finally {
       document.getElementById('btnText').classList.remove('hidden');
       document.getElementById('loader').classList.remove('active');
@@ -1981,6 +2016,7 @@ textarea::placeholder { color: var(--app-muted); }
     const errorMsg = document.getElementById('errorMsg');
     const resultCard = document.getElementById('resultCard');
 
+    clear429Timer();
     errorMsg.classList.remove('visible');
     if (!scannedImageBase64) return;
 
@@ -2033,10 +2069,13 @@ textarea::placeholder { color: var(--app-muted); }
       updateScanHint();
 
     } catch (err) {
-      let msg = err.message;
-      if (msg.includes('429')) msg = 'Too many requests. Please wait a moment.';
-      errorMsg.textContent = '⚠️ ' + msg;
-      errorMsg.classList.add('visible');
+      const msg = err.message;
+      if (msg.includes('429')) {
+        show429Error(() => simplifyFromScan());
+      } else {
+        errorMsg.textContent = '⚠️ ' + msg;
+        errorMsg.classList.add('visible');
+      }
     } finally {
       document.getElementById('scanBtnText').classList.remove('hidden');
       document.getElementById('scanLoader').classList.remove('active');
