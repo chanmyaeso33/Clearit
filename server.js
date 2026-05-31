@@ -602,6 +602,16 @@ ${langInstruction}${levelSystemHint[simplifyLevel]}
 
 Your goal: simplify the wording, but do not remove important facts, examples, or ideas.
 
+Before writing the simplified version:
+1. List all specific examples in the source text.
+2. Verify every example appears in the simplified text.
+3. If any example is missing, rewrite the simplification.
+Examples include:
+- named technologies, services, or products
+- lists after "such as", "for example", "including", "like"
+- concrete events, places, or actions
+- numbers, dates, and statistics
+
 Rules:
 1. Preserve all key information from the source text.
 2. Do NOT add new facts, opinions, explanations, examples, recommendations, causes, consequences, or conclusions that are not explicitly stated.
@@ -613,11 +623,6 @@ Rules:
 8. Replace difficult words with easier alternatives only when meaning remains unchanged.
 9. Maintain factual accuracy.
 10. The simplified text should contain approximately the same information as the original text, but expressed more clearly.
-11. Before generating the final answer, verify:
-    * No new information has been introduced.
-    * No important information has been omitted — including specific examples from the source.
-    * Every item that was listed in the source is still listed in the output.
-    * The meaning remains equivalent to the source.
 ${targetLang === 'Burmese' ? `
 Additional Burmese Simplification Rules:
 1. Keep all important nouns and concepts from the source text.
@@ -627,7 +632,10 @@ Additional Burmese Simplification Rules:
 5. When shortening a sentence, remove redundancy rather than information.
 6. If a phrase is important but complex, simplify its wording instead of deleting it.
 7. Ensure that every major idea in the source appears in the output.
-8. Do NOT translate English phrases literally word-for-word into Burmese. Find the natural idiomatic Burmese expression that carries the same meaning. For example, do not calque "social distance" as "အကွာအဝေး" — use "ဆက်ဆံရေး လျော့နည်းလာ" or the equivalent natural phrasing.` : ''}
+8. If a Burmese phrase sounds like a direct translation from English, replace it with the natural Burmese expression.
+   Bad:  လူမှုဆက်သွယ်ရေး အကွာအဝေး တိုးလာခြင်း
+   Good: လူမှုဆက်ဆံရေး လျော့နည်းလာခြင်း
+   Good: လူအချင်းချင်း ဆက်ဆံရေး အားနည်းလာခြင်း` : ''}
 
 Respond ONLY with a valid JSON object. No markdown. No explanation. No backticks.`
       },
