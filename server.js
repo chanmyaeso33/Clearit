@@ -597,44 +597,40 @@ Return ONLY this JSON:
     ] : [
       {
         role: 'system',
-        content: `You are a production-grade multilingual text simplification system.
+        content: `You are an expert text simplification system.
 ${langInstruction}${levelSystemHint[simplifyLevel]}
+
+Your goal is to make the text easier to understand while preserving the original meaning.
+
+Rules:
+1. Preserve all key information from the source text.
+2. Do NOT add new facts, opinions, explanations, examples, recommendations, causes, consequences, or conclusions that are not explicitly stated.
+3. Do NOT remove important concepts, entities, events, numbers, dates, relationships, or warnings.
+4. Use simpler vocabulary and shorter sentences whenever possible.
+5. Keep the original tone and intent.
+6. If a sentence contains multiple ideas, split it into shorter sentences.
+7. Replace difficult words with easier alternatives only when meaning remains unchanged.
+8. Maintain factual accuracy.
+9. The simplified text should contain approximately the same information as the original text, but expressed more clearly.
+10. Before generating the final answer, verify:
+    * No new information has been introduced.
+    * No important information has been omitted.
+    * The meaning remains equivalent to the source.
+${targetLang === 'Burmese' ? `
+Additional Burmese Simplification Rules:
+1. Keep all important nouns and concepts from the source text.
+2. Do not replace specific concepts with broader categories.
+3. Preserve all cause-and-effect relationships.
+4. Preserve all lists of problems, benefits, risks, or examples.
+5. When shortening a sentence, remove redundancy rather than information.
+6. If a phrase is important but complex, simplify its wording instead of deleting it.
+7. Ensure that every major idea in the source appears in the output.` : ''}
+
 Respond ONLY with a valid JSON object. No markdown. No explanation. No backticks.`
       },
       {
         role: 'user',
-        content: `Step 1: Identify ALL of the following in the text:
-- Core meaning and main argument
-- Causal relationships (because, therefore, since)
-- Simultaneous actions (while, at the same time)
-- Important nuances and qualifications
-- Scientific or technical precision (e.g. "reduce the EFFECTS of" not "reduce")
-- Economic, social, or scientific relationships
-
-Step 2: Rewrite naturally for native speakers of ${targetLang}, preserving everything from Step 1.
-
-CRITICAL RULES:
-- Rewrite naturally for native speakers of ${targetLang} — avoid direct translation structure
-- Preserve meaning while maximizing fluency and readability
-- Use "reduce the effects of" NOT "reduce" for ongoing phenomena like climate change
-- Use "major changes" not "big changes" for large-scale transformation
-- Preserve "human-caused" or "caused by humans" when original says anthropogenic
-- Use "while" OR "at the same time" — NEVER BOTH together (redundant)
-- Keep "economic inequality" or "economic disparities" — never weaken to "economic differences"
-- Do NOT oversimplify — never sacrifice precision for brevity
-- Do NOT add filler phrases — every word must carry meaning
-- Target audience: educated high school student or general adult reader
-- Sound natural and educational — not academic or bureaucratic
-
-Your output will be evaluated on:
-- meaning preservation (most important — no semantic drift)
-- scientific/technical accuracy
-- simultaneous and causal structure preserved WITHOUT redundancy
-- natural fluency in ${targetLang} for native speakers
-- clarity without losing nuance
-- conciseness — no unnecessary repetition
-
-TARGET: near state-of-the-art educational simplification quality (9.5+).
+        content: `Simplify the following text. Write the output in ${targetLang}.
 
 INPUT TEXT:
 """
@@ -642,7 +638,7 @@ ${inputText}
 """
 ${levelUserHint[simplifyLevel]}
 Return ONLY this JSON:
-{"text":"your natural, precise simplified version in ${targetLang}","lang":"language of the input text","topic":"one of: Tech Legal Science Health Finance Education Food Politics Philosophy Creative News Business Culture"}`
+{"text":"your simplified version in ${targetLang}","lang":"language of the input text","topic":"one of: Tech Legal Science Health Finance Education Food Politics Philosophy Creative News Business Culture"}`
       }
     ];
 
