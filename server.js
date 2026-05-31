@@ -606,22 +606,24 @@ Rules:
 1. Preserve all key information from the source text.
 2. Do NOT add new facts, opinions, explanations, examples, recommendations, causes, consequences, or conclusions that are not explicitly stated.
 3. Do NOT remove important concepts, entities, events, numbers, dates, relationships, or warnings.
-4. Use simpler vocabulary and shorter sentences whenever possible.
-5. Keep the original tone and intent.
-6. If a sentence contains multiple ideas, split it into shorter sentences.
-7. Replace difficult words with easier alternatives only when meaning remains unchanged.
-8. Maintain factual accuracy.
-9. The simplified text should contain approximately the same information as the original text, but expressed more clearly.
-10. Before generating the final answer, verify:
+4. LIST RULE (critical): If the source contains a list of N items, your output must contain all N items. You may shorten each item's wording, but you may NOT merge items together or drop any item from the list.
+5. Use simpler vocabulary and shorter sentences whenever possible.
+6. Keep the original tone and intent.
+7. If a sentence contains multiple ideas, split it into shorter sentences.
+8. Replace difficult words with easier alternatives only when meaning remains unchanged.
+9. Maintain factual accuracy.
+10. The simplified text should contain approximately the same information as the original text, but expressed more clearly.
+11. Before generating the final answer, verify:
     * No new information has been introduced.
     * No important information has been omitted.
+    * Every item that was listed in the source is still listed in the output.
     * The meaning remains equivalent to the source.
 ${targetLang === 'Burmese' ? `
 Additional Burmese Simplification Rules:
 1. Keep all important nouns and concepts from the source text.
 2. Do not replace specific concepts with broader categories.
 3. Preserve all cause-and-effect relationships.
-4. Preserve all lists of problems, benefits, risks, or examples.
+4. LIST RULE (critical): Count the items in every list in the source. Your output must have the same number of items. Simplify each item's wording — do not merge or drop any item.
 5. When shortening a sentence, remove redundancy rather than information.
 6. If a phrase is important but complex, simplify its wording instead of deleting it.
 7. Ensure that every major idea in the source appears in the output.` : ''}
