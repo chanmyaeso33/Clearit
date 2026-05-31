@@ -1214,6 +1214,37 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
       }
     }
 
+    // ── SHORT-TEXT GUARD ────────────────────────────────────────────────────────
+    // Signs, labels, and short captions often contain fewer characters than a
+    // paragraph. Compressing them through Steps 2+3 adds latency and tends to
+    // paraphrase away important exact wording (product names, prices, warnings).
+    // If cleanedText is under 120 characters, skip simplification entirely and
+    // return the extracted text as-is.
+    if (cleanedText.length < 120) {
+      console.log(`STEP 2+3 skipped — cleanedText is only ${cleanedText.length} chars (< 120), returning raw extracted text`);
+      const topic = 'Tech';
+      const themeShort = { bg: '#061420', surface: '#0d1f2d', accent: '#00d4ff' };
+      return res.status(200).json({
+        simplified: cleanedText,
+        summary: cleanedText,
+        extracted_text: extractedText,
+        cleaned_text: cleanedText,
+        image_script: imageScript,
+        ocr_has_burmese: hasBurmese,
+        ocr_has_thai: hasThai,
+        language: imageScript || 'Unknown',
+        theme: {
+          mood: topic,
+          bg: themeShort.bg,
+          surface: themeShort.surface,
+          text: '#f0ede8',
+          accent: themeShort.accent,
+          muted: 'rgba(240,237,232,0.45)',
+          border: 'rgba(255,255,255,0.08)'
+        }
+      });
+    }
+
     // ── STEP 2 + 3: Grounded simplify/summarize from the CLEANED extracted text ─────
     // Goal: ONLY use what Step 1 found. Hard anti-hallucination rules.
     const langInstruction = targetLang === 'Burmese'
