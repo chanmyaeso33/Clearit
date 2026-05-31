@@ -1261,7 +1261,11 @@ Output the text with ONLY broken artifact characters replaced. Everything else m
     // ── STEP 2 + 3: Grounded simplify/summarize from the CLEANED extracted text ─────
     // Goal: ONLY use what Step 1 found. Hard anti-hallucination rules.
     const langInstruction = targetLang === 'Burmese'
-      ? `You MUST write ONLY in Burmese script (Myanmar Unicode \u1000-\u109F). No English words allowed. Write naturally for educated native Burmese speakers.`
+      ? `You MUST write ONLY in Burmese script (Myanmar Unicode \u1000-\u109F). No English words allowed anywhere in your output.
+
+CRITICAL \u2014 MIXED-LANGUAGE SOURCE: The OCR source text may contain English words embedded inside Burmese text (e.g. "existing social biases", "predictive systems", "algorithms"). You MUST translate every such English word into natural Burmese. Never copy or pass through English words into your Burmese output \u2014 not even technical terms. Find the natural Burmese equivalent for every English word you encounter in the source.
+
+Write naturally for educated native Burmese speakers.`
       : targetLang === 'Thai'
       ? `You MUST write ONLY in Thai script. Write naturally for native Thai speakers — not formal academic Thai.`
       : `Write the output in natural, fluent ${targetLang}.`;

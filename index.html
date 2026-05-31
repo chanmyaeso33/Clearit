@@ -773,6 +773,38 @@ textarea::placeholder { color: var(--app-muted); }
   .features-grid { grid-template-columns: repeat(2,1fr); }
 }
 
+/* SCAN DEBUG PANEL */
+.scan-debug {
+  width: 100%; margin-top: 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px; overflow: hidden;
+  display: none; transition: border-color var(--app-transition);
+}
+.scan-debug.visible { display: block; }
+.scan-debug-toggle {
+  width: 100%; background: rgba(255,255,255,0.03); border: none;
+  padding: 9px 14px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  color: var(--app-muted); font-size: 11px; letter-spacing: 0.4px;
+  font-family: 'DM Sans', sans-serif; transition: background 0.2s, color 0.2s;
+}
+.scan-debug-toggle:hover { background: rgba(255,255,255,0.07); color: var(--app-text); }
+.scan-debug-body { display: none; flex-direction: column; gap: 10px; padding: 12px 14px; }
+.scan-debug-body.open { display: flex; }
+.scan-debug-stage { display: flex; flex-direction: column; gap: 4px; }
+.scan-debug-stage-label {
+  font-size: 9.5px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--app-accent); font-family: 'DM Mono', monospace;
+}
+.scan-debug-text {
+  margin: 0; font-size: 11px; line-height: 1.55;
+  font-family: 'DM Mono', monospace;
+  color: rgba(240,237,232,0.55); white-space: pre-wrap;
+  word-break: break-word; max-height: 110px; overflow-y: auto;
+  background: rgba(255,255,255,0.03); border-radius: 6px;
+  padding: 7px 9px;
+}
+
 /* CROP EDITOR */
 .crop-editor {
   position: fixed; inset: 0; z-index: 300;
@@ -1262,6 +1294,27 @@ textarea::placeholder { color: var(--app-muted); }
       </div>
     </div>
 
+    <!-- SCAN PIPELINE DEBUG PANEL — only shown after a scan -->
+    <div class="scan-debug" id="scanDebug">
+      <button class="scan-debug-toggle" onclick="toggleScanDebug()">
+        🔬 Pipeline trace <span id="scanDebugArrow">▾</span>
+      </button>
+      <div class="scan-debug-body" id="scanDebugBody">
+        <div class="scan-debug-stage">
+          <div class="scan-debug-stage-label">① Raw OCR</div>
+          <pre class="scan-debug-text" id="debugRawOcr"></pre>
+        </div>
+        <div class="scan-debug-stage">
+          <div class="scan-debug-stage-label">② Cleaned</div>
+          <pre class="scan-debug-text" id="debugCleaned"></pre>
+        </div>
+        <div class="scan-debug-stage">
+          <div class="scan-debug-stage-label">③ Final output</div>
+          <pre class="scan-debug-text" id="debugFinal"></pre>
+        </div>
+      </div>
+    </div>
+
     <div class="history-section" id="historySection">
       <div class="history-header">
         <div class="history-title">☁️ History — <span id="historyCount">0</span> simplifications</div>
@@ -1644,6 +1697,25 @@ textarea::placeholder { color: var(--app-muted); }
     }, 1000);
   }
 
+  // ---- SCAN DEBUG PANEL ----
+  function showScanDebug(raw, cleaned, final) {
+    document.getElementById('debugRawOcr').textContent  = raw     || '(not returned)';
+    document.getElementById('debugCleaned').textContent = cleaned || '(same as raw — cleanup skipped)';
+    document.getElementById('debugFinal').textContent   = final   || '';
+    document.getElementById('scanDebugBody').classList.remove('open');
+    document.getElementById('scanDebugArrow').textContent = '▾';
+    document.getElementById('scanDebug').classList.add('visible');
+  }
+  function hideScanDebug() {
+    document.getElementById('scanDebug').classList.remove('visible');
+  }
+  function toggleScanDebug() {
+    const body  = document.getElementById('scanDebugBody');
+    const arrow = document.getElementById('scanDebugArrow');
+    const open  = body.classList.toggle('open');
+    arrow.textContent = open ? '▴' : '▾';
+  }
+
   // ---- EXPLAIN RENDERER ----
   // Converts "[word = definition]" annotations into styled HTML spans.
   // All non-annotation text is HTML-escaped for safety.
@@ -2013,6 +2085,7 @@ textarea::placeholder { color: var(--app-muted); }
       resultCard.style.display = 'block';
       resultCard.classList.add('visible');
       resetFeedback();
+      hideScanDebug();
       addToHistory(result, inputText);
 
     } catch (err) {
@@ -2110,6 +2183,7 @@ textarea::placeholder { color: var(--app-muted); }
       resultCard.style.display = 'block';
       resultCard.classList.add('visible');
       resetFeedback();
+      showScanDebug(result.extracted_text, result.cleaned_text, outputText);
       addToHistory(result, '[Scanned image]');
 
       // Show re-simplify hint — user can pick another language and tap Simplify It
