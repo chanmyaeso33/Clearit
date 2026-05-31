@@ -773,6 +773,65 @@ textarea::placeholder { color: var(--app-muted); }
   .features-grid { grid-template-columns: repeat(2,1fr); }
 }
 
+/* CROP EDITOR */
+.crop-editor {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.94);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 28px 16px 36px; gap: 16px;
+}
+.crop-editor.visible { display: flex; }
+.crop-editor-header {
+  width: 100%; max-width: 620px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.crop-editor-title {
+  color: #f0ede8; font-size: 15px;
+  font-family: 'Clash Display', sans-serif; font-weight: 600;
+}
+.crop-editor-hint {
+  color: rgba(240,237,232,0.45); font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+}
+.crop-canvas-wrap {
+  flex: 1; width: 100%; display: flex;
+  align-items: center; justify-content: center; overflow: hidden;
+}
+#cropCanvas {
+  display: block; touch-action: none;
+  border-radius: 10px; cursor: crosshair;
+  max-width: 100%; max-height: 100%;
+}
+.crop-editor-actions {
+  display: flex; gap: 8px; width: 100%; max-width: 620px;
+}
+.crop-cancel-btn {
+  flex: 1; padding: 14px;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 12px; color: #f0ede8;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer;
+  transition: background 0.2s;
+}
+.crop-cancel-btn:hover { background: rgba(255,255,255,0.13); }
+.crop-reset-btn {
+  padding: 14px 16px; background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 12px; color: rgba(240,237,232,0.55);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+}
+.crop-reset-btn:hover { border-color: rgba(255,255,255,0.3); color: #f0ede8; }
+.crop-confirm-btn {
+  flex: 2; padding: 14px;
+  background: #c8f050; border: none;
+  border-radius: 12px; color: #0a0a0f;
+  font-family: 'Clash Display', sans-serif; font-weight: 600; font-size: 15px;
+  cursor: pointer; transition: background 0.2s;
+}
+.crop-confirm-btn:hover { background: #d4f565; }
+
 /* MOBILE */
 @media (max-width: 768px) {
   nav { padding: 14px 20px; }
@@ -1993,21 +2052,9 @@ textarea::placeholder { color: var(--app-muted); }
   function handleScan(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target.result;
-
-      // Send ORIGINAL full-resolution image to server — Sharp handles all preprocessing there
-      // Do NOT compress/resize here — it destroys Burmese character detail before OCR
-      // Sharp on the server upscales to 2x, grayscales, sharpens, and thresholds at full quality
-      scannedImageBase64 = dataUrl.split(',')[1];
-
-      document.getElementById('scannedImage').src = dataUrl;
-      document.getElementById('scannerPreview').classList.add('visible');
-
-      simplifyFromScan();
-    };
+    // Open crop editor — user selects the text area before processing
+    reader.onload = (e) => openCropEditor(e.target.result);
     reader.readAsDataURL(file);
   }
 
@@ -2083,6 +2130,168 @@ textarea::placeholder { color: var(--app-muted); }
       document.getElementById('simplifyBtn').disabled = false;
     }
   }
+
+  // ---- CROP EDITOR ----
+  let _cropImage = null;
+  let _cropRect  = { x: 0, y: 0, w: 0, h: 0 };
+  let _cropDragStart = null;
+
+  function openCropEditor(dataUrl) {
+    const canvas = document.getElementById('cropCanvas');
+    const img = new Image();
+    img.onload = () => {
+      _cropImage = img;
+      // Scale image to fit screen — leave room for header + actions
+      const maxW = Math.min(window.innerWidth - 32, 620);
+      const maxH = window.innerHeight * 0.60;
+      const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+      canvas.width  = Math.round(img.naturalWidth  * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      // Default selection = full image
+      _cropRect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+      _drawCrop();
+      document.getElementById('cropEditor').classList.add('visible');
+    };
+    img.src = dataUrl;
+  }
+
+  function _drawCrop() {
+    const canvas = document.getElementById('cropCanvas');
+    const ctx = canvas.getContext('2d');
+    const { x, y, w, h } = _cropRect;
+    // Draw full image dimmed
+    ctx.drawImage(_cropImage, 0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (w > 2 && h > 2) {
+      // Redraw crop area at full brightness
+      const sx = (x / canvas.width)  * _cropImage.naturalWidth;
+      const sy = (y / canvas.height) * _cropImage.naturalHeight;
+      const sw = (w / canvas.width)  * _cropImage.naturalWidth;
+      const sh = (h / canvas.height) * _cropImage.naturalHeight;
+      ctx.drawImage(_cropImage, sx, sy, sw, sh, x, y, w, h);
+      // Lime selection border
+      ctx.strokeStyle = '#c8f050';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      // Corner handles
+      const hs = 10;
+      ctx.fillStyle = '#c8f050';
+      [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy]) => {
+        ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
+      });
+      // Rule-of-thirds guide lines
+      ctx.strokeStyle = 'rgba(200,240,80,0.25)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x + w / 3,     y);     ctx.lineTo(x + w / 3,     y + h);
+      ctx.moveTo(x + 2 * w / 3, y);     ctx.lineTo(x + 2 * w / 3, y + h);
+      ctx.moveTo(x,              y + h / 3);    ctx.lineTo(x + w, y + h / 3);
+      ctx.moveTo(x,              y + 2 * h / 3);ctx.lineTo(x + w, y + 2 * h / 3);
+      ctx.stroke();
+    }
+  }
+
+  function _cropGetPos(e) {
+    const canvas = document.getElementById('cropCanvas');
+    const r = canvas.getBoundingClientRect();
+    const sx = canvas.width  / r.width;
+    const sy = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+  }
+
+  function _initCropEvents() {
+    const canvas = document.getElementById('cropCanvas');
+
+    function onStart(e) {
+      e.preventDefault();
+      _cropDragStart = _cropGetPos(e);
+      _cropRect = { x: _cropDragStart.x, y: _cropDragStart.y, w: 0, h: 0 };
+    }
+    function onMove(e) {
+      e.preventDefault();
+      if (!_cropDragStart) return;
+      const pos = _cropGetPos(e);
+      const x = Math.max(0, Math.min(_cropDragStart.x, pos.x));
+      const y = Math.max(0, Math.min(_cropDragStart.y, pos.y));
+      const w = Math.min(Math.abs(pos.x - _cropDragStart.x), canvas.width  - x);
+      const h = Math.min(Math.abs(pos.y - _cropDragStart.y), canvas.height - y);
+      _cropRect = { x, y, w, h };
+      _drawCrop();
+    }
+    function onEnd() {
+      _cropDragStart = null;
+      // Tiny accidental tap → reset to full image
+      if (_cropRect.w < 20 || _cropRect.h < 20) {
+        _cropRect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+        _drawCrop();
+      }
+    }
+
+    canvas.addEventListener('mousedown',  onStart);
+    canvas.addEventListener('mousemove',  onMove);
+    canvas.addEventListener('mouseup',    onEnd);
+    canvas.addEventListener('mouseleave', onEnd);
+    canvas.addEventListener('touchstart', onStart, { passive: false });
+    canvas.addEventListener('touchmove',  onMove,  { passive: false });
+    canvas.addEventListener('touchend',   onEnd);
+  }
+
+  function confirmCrop() {
+    const canvas = document.getElementById('cropCanvas');
+    const { x, y, w, h } = _cropRect;
+    if (w < 5 || h < 5) return;
+    // Render cropped region at original resolution
+    const scaleX = _cropImage.naturalWidth  / canvas.width;
+    const scaleY = _cropImage.naturalHeight / canvas.height;
+    const off = document.createElement('canvas');
+    off.width  = Math.round(w * scaleX);
+    off.height = Math.round(h * scaleY);
+    off.getContext('2d').drawImage(
+      _cropImage,
+      x * scaleX, y * scaleY, w * scaleX, h * scaleY,
+      0, 0, off.width, off.height
+    );
+    const croppedDataUrl = off.toDataURL('image/jpeg', 0.95);
+    scannedImageBase64 = croppedDataUrl.split(',')[1];
+    document.getElementById('scannedImage').src = croppedDataUrl;
+    document.getElementById('scannerPreview').classList.add('visible');
+    document.getElementById('cropEditor').classList.remove('visible');
+    updateScanHint();
+    simplifyFromScan();
+  }
+
+  function cancelCrop() {
+    document.getElementById('cropEditor').classList.remove('visible');
+    _cropImage = null;
+    _cropDragStart = null;
+  }
+
+  function resetCropSelection() {
+    const canvas = document.getElementById('cropCanvas');
+    _cropRect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+    _drawCrop();
+  }
+
+  _initCropEvents();
 </script>
+
+<!-- CROP EDITOR OVERLAY -->
+<div class="crop-editor" id="cropEditor">
+  <div class="crop-editor-header">
+    <div class="crop-editor-title">📐 Select the text area</div>
+    <div class="crop-editor-hint">Drag on the image to select. Only the selected area will be processed.</div>
+  </div>
+  <div class="crop-canvas-wrap">
+    <canvas id="cropCanvas"></canvas>
+  </div>
+  <div class="crop-editor-actions">
+    <button class="crop-cancel-btn" onclick="cancelCrop()">✕ Cancel</button>
+    <button class="crop-reset-btn" onclick="resetCropSelection()">Reset</button>
+    <button class="crop-confirm-btn" onclick="confirmCrop()">Use This Area ✓</button>
+  </div>
+</div>
+
 </body>
 </html>
