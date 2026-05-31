@@ -2135,8 +2135,10 @@ textarea::placeholder { color: var(--app-muted); }
   let _cropImage = null;
   let _cropRect  = { x: 0, y: 0, w: 0, h: 0 };
   let _cropDragStart = null;
+  let _cropEventsReady = false; // lazy-init: canvas doesn't exist until after this script runs
 
   function openCropEditor(dataUrl) {
+    if (!_cropEventsReady) { _initCropEvents(); _cropEventsReady = true; }
     const canvas = document.getElementById('cropCanvas');
     const img = new Image();
     img.onload = () => {
@@ -2274,7 +2276,6 @@ textarea::placeholder { color: var(--app-muted); }
     _drawCrop();
   }
 
-  _initCropEvents();
 </script>
 
 <!-- CROP EDITOR OVERLAY -->
