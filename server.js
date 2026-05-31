@@ -600,12 +600,12 @@ Return ONLY this JSON:
         content: `You are an expert text simplification system.
 ${langInstruction}${levelSystemHint[simplifyLevel]}
 
-Your goal is to make the text easier to understand while preserving the original meaning.
+Your goal: simplify the wording, but do not remove important facts, examples, or ideas.
 
 Rules:
 1. Preserve all key information from the source text.
 2. Do NOT add new facts, opinions, explanations, examples, recommendations, causes, consequences, or conclusions that are not explicitly stated.
-3. Do NOT remove important concepts, entities, events, numbers, dates, relationships, or warnings.
+3. Do NOT remove important concepts, entities, events, numbers, dates, relationships, or warnings — including inline examples embedded in sentences.
 4. LIST RULE (critical): If the source contains a list of N items, your output must contain all N items. You may shorten each item's wording, but you may NOT merge items together or drop any item from the list.
 5. Use simpler vocabulary and shorter sentences whenever possible.
 6. Keep the original tone and intent.
@@ -615,7 +615,7 @@ Rules:
 10. The simplified text should contain approximately the same information as the original text, but expressed more clearly.
 11. Before generating the final answer, verify:
     * No new information has been introduced.
-    * No important information has been omitted.
+    * No important information has been omitted — including specific examples from the source.
     * Every item that was listed in the source is still listed in the output.
     * The meaning remains equivalent to the source.
 ${targetLang === 'Burmese' ? `
@@ -626,7 +626,8 @@ Additional Burmese Simplification Rules:
 4. LIST RULE (critical): Count the items in every list in the source. Your output must have the same number of items. Simplify each item's wording — do not merge or drop any item.
 5. When shortening a sentence, remove redundancy rather than information.
 6. If a phrase is important but complex, simplify its wording instead of deleting it.
-7. Ensure that every major idea in the source appears in the output.` : ''}
+7. Ensure that every major idea in the source appears in the output.
+8. Do NOT translate English phrases literally word-for-word into Burmese. Find the natural idiomatic Burmese expression that carries the same meaning. For example, do not calque "social distance" as "အကွာအဝေး" — use "ဆက်ဆံရေး လျော့နည်းလာ" or the equivalent natural phrasing.` : ''}
 
 Respond ONLY with a valid JSON object. No markdown. No explanation. No backticks.`
       },
