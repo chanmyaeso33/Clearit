@@ -2176,8 +2176,8 @@ textarea::placeholder { color: var(--app-muted); }
       ctx.strokeStyle = '#c8f050';
       ctx.lineWidth = 2;
       ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
-      // Corner handles
-      const hs = 10;
+      // Corner handles — 14 px visual, 28 px touch target
+      const hs = 14;
       ctx.fillStyle = '#c8f050';
       [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy]) => {
         ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
@@ -2205,28 +2205,98 @@ textarea::placeholder { color: var(--app-muted); }
 
   function _initCropEvents() {
     const canvas = document.getElementById('cropCanvas');
+    const HIT = 28; // touch target radius for corner handles (px in canvas coords)
+
+    // Determine what a pointer-down at `pos` should do
+    function getMode(pos) {
+      const { x, y, w, h } = _cropRect;
+      if (w < 1 || h < 1) return 'new';
+      const corners = [
+        { m: 'tl', cx: x,     cy: y     },
+        { m: 'tr', cx: x + w, cy: y     },
+        { m: 'bl', cx: x,     cy: y + h },
+        { m: 'br', cx: x + w, cy: y + h },
+      ];
+      for (const { m, cx, cy } of corners) {
+        if (Math.abs(pos.x - cx) <= HIT && Math.abs(pos.y - cy) <= HIT) return 'resize-' + m;
+      }
+      if (pos.x >= x && pos.x <= x + w && pos.y >= y && pos.y <= y + h) return 'move';
+      return 'new';
+    }
+
+    // Closure state — keeps drag context without polluting outer scope
+    let mode = null, dragStart = null, rectSnap = null;
 
     function onStart(e) {
       e.preventDefault();
-      _cropDragStart = _cropGetPos(e);
-      _cropRect = { x: _cropDragStart.x, y: _cropDragStart.y, w: 0, h: 0 };
+      const pos = _cropGetPos(e);
+      mode      = getMode(pos);
+      dragStart = pos;
+      rectSnap  = { ..._cropRect };
+      if (mode === 'new') _cropRect = { x: pos.x, y: pos.y, w: 0, h: 0 };
+      if (mode === 'move') canvas.style.cursor = 'grabbing';
     }
+
     function onMove(e) {
       e.preventDefault();
-      if (!_cropDragStart) return;
       const pos = _cropGetPos(e);
-      const x = Math.max(0, Math.min(_cropDragStart.x, pos.x));
-      const y = Math.max(0, Math.min(_cropDragStart.y, pos.y));
-      const w = Math.min(Math.abs(pos.x - _cropDragStart.x), canvas.width  - x);
-      const h = Math.min(Math.abs(pos.y - _cropDragStart.y), canvas.height - y);
-      _cropRect = { x, y, w, h };
+
+      if (!dragStart) {
+        // Hovering — update cursor to signal what will happen on tap
+        const hm = getMode(pos);
+        canvas.style.cursor =
+          hm === 'move'                                      ? 'grab'         :
+          hm === 'resize-tl' || hm === 'resize-br'          ? 'nwse-resize'  :
+          hm === 'resize-tr' || hm === 'resize-bl'          ? 'nesw-resize'  : 'crosshair';
+        return;
+      }
+
+      const dx = pos.x - dragStart.x;
+      const dy = pos.y - dragStart.y;
+      const { x: ox, y: oy, w: ow, h: oh } = rectSnap;
+
+      if (mode === 'new') {
+        const x = Math.max(0, Math.min(dragStart.x, pos.x));
+        const y = Math.max(0, Math.min(dragStart.y, pos.y));
+        _cropRect = {
+          x, y,
+          w: Math.min(Math.abs(pos.x - dragStart.x), canvas.width  - x),
+          h: Math.min(Math.abs(pos.y - dragStart.y), canvas.height - y)
+        };
+      } else if (mode === 'move') {
+        _cropRect = {
+          x: Math.max(0, Math.min(ox + dx, canvas.width  - ow)),
+          y: Math.max(0, Math.min(oy + dy, canvas.height - oh)),
+          w: ow, h: oh
+        };
+      } else if (mode === 'resize-tl') {
+        const nx = Math.max(0,              Math.min(pos.x, ox + ow - 10));
+        const ny = Math.max(0,              Math.min(pos.y, oy + oh - 10));
+        _cropRect = { x: nx, y: ny, w: ox + ow - nx, h: oy + oh - ny };
+      } else if (mode === 'resize-tr') {
+        const ny = Math.max(0,              Math.min(pos.y, oy + oh - 10));
+        _cropRect = { x: ox, y: ny, w: Math.max(10, Math.min(pos.x - ox, canvas.width  - ox)), h: oy + oh - ny };
+      } else if (mode === 'resize-bl') {
+        const nx = Math.max(0,              Math.min(pos.x, ox + ow - 10));
+        _cropRect = { x: nx, y: oy, w: ox + ow - nx, h: Math.max(10, Math.min(pos.y - oy, canvas.height - oy)) };
+      } else if (mode === 'resize-br') {
+        _cropRect = {
+          x: ox, y: oy,
+          w: Math.max(10, Math.min(pos.x - ox, canvas.width  - ox)),
+          h: Math.max(10, Math.min(pos.y - oy, canvas.height - oy))
+        };
+      }
       _drawCrop();
     }
+
     function onEnd() {
-      _cropDragStart = null;
-      // Tiny accidental tap → reset to full image
-      if (_cropRect.w < 20 || _cropRect.h < 20) {
-        _cropRect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+      const snap   = rectSnap;
+      const wasNew = mode === 'new';
+      mode = null; dragStart = null; rectSnap = null;
+      canvas.style.cursor = 'crosshair';
+      // Accidental tiny tap → keep previous selection rather than collapsing to nothing
+      if (wasNew && (_cropRect.w < 20 || _cropRect.h < 20)) {
+        _cropRect = (snap && snap.w >= 20) ? snap : { x: 0, y: 0, w: canvas.width, h: canvas.height };
         _drawCrop();
       }
     }
