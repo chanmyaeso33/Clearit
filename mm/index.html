@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClearIt - ဘာစာမဆို စက္ကန့်ပိုင်းအတွင်း နားလည်ပါ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Clash+Display:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   LANDING PAGE STYLES
+   ============================================================ */
+
+:root {
+  --ink: #0c0c0e;
+  --paper: #f5f2ec;
+  --cream: #ede9e0;
+  --red: #e8341a;
+  --muted: #7a7570;
+  --border: #d8d2c8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans Myanmar', 'DM Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px;
+  background: rgba(245,242,236,0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: 22px; letter-spacing: -0.5px;
+}
+
+.nav-logo span { color: var(--red); }
+
+.nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+.nav-links a { text-decoration: none; color: var(--muted); font-size: 13px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--ink); }
+
+.nav-cta {
+  background: var(--ink) !important; color: var(--paper) !important;
+  padding: 10px 22px; border-radius: 100px; font-size: 13px !important;
+  font-weight: 500; transition: background 0.2s !important;
+}
+
+.nav-cta:hover { background: var(--red) !important; }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: grid; grid-template-columns: 1fr 1fr;
+  padding-top: 72px; overflow: hidden;
+}
+
+.hero-left {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 80px 56px;
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 28px;
+}
+
+.hero-tag::before { content: ''; display: block; width: 24px; height: 1px; background: var(--red); }
+
+.hero-headline {
+  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-size: clamp(38px, 4.5vw, 62px); line-height: 1.06;
+  letter-spacing: -1.5px; margin-bottom: 24px;
+}
+
+.hero-headline em { font-style: italic; color: var(--red); }
+
+.hero-sub {
+  font-size: 16px; line-height: 1.75; color: var(--muted);
+  max-width: 400px; margin-bottom: 40px;
+}
+
+.hero-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.trust-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+}
+.trust-signals span {
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lp-section { padding: 110px 60px; max-width: 1200px; margin: 0 auto; }
+.step-item { background: var(--paper); padding: 36px 30px; transition: background 0.3s; }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ink); color: var(--paper);
+  padding: 15px 30px; border-radius: 100px;
+  font-size: 15px; font-weight: 500; text-decoration: none;
+  border: 2px solid var(--ink); transition: all 0.2s;
+}
+
+.btn-primary:hover { background: var(--red); border-color: var(--red); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(232,52,26,0.25); }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--ink); font-size: 15px; font-weight: 500;
+  text-decoration: none; padding: 15px 22px;
+  border-radius: 100px; border: 2px solid var(--border); transition: all 0.2s;
+}
+
+.btn-secondary:hover { border-color: var(--ink); transform: translateY(-2px); }
+
+.hero-right { background: var(--ink); position: relative; overflow: hidden; }
+
+.hero-right::before {
+  content: 'CLEAR';
+  position: absolute; font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: 160px; color: rgba(255,255,255,0.03);
+  top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-15deg);
+  white-space: nowrap; pointer-events: none;
+}
+
+.hero-mockup {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; padding: 40px;
+}
+
+.mockup-card {
+  background: #16161e; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 32px; width: 100%; max-width: 380px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+  animation: cardFloat 6s ease-in-out infinite;
+}
+
+.hero-textarea {
+  width: 100%; min-height: 100px; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+  padding: 14px; color: rgba(255,255,255,0.8); font-size: 12px;
+  font-family: 'DM Sans', sans-serif; line-height: 1.6;
+  resize: none; outline: none; margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.hero-textarea:focus { border-color: rgba(200,240,80,0.4); }
+.hero-textarea::placeholder { color: rgba(255,255,255,0.25); }
+
+.mockup-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 10px; font-family: 'DM Mono', monospace; display: block; }
+
+.mockup-btn-reset {
+  width: 100%; padding: 10px; background: transparent;
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
+  color: rgba(255,255,255,0.4); font-size: 12px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+}
+.mockup-btn-reset:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); }
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.mockup-input {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 14px; margin-bottom: 14px;
+}
+
+.mockup-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 7px; font-family: 'DM Mono', monospace; }
+.mockup-text { font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+
+.mockup-btn {
+  width: 100%; padding: 13px; background: #c8f050; color: #0a0a0f;
+  border: none; border-radius: 10px; font-family: 'Clash Display', sans-serif;
+  font-weight: 700; font-size: 14px; cursor: default; margin-bottom: 14px;
+}
+
+.mockup-result {
+  background: rgba(200,240,80,0.06); border: 1px solid rgba(200,240,80,0.15);
+  border-radius: 12px; padding: 14px;
+}
+
+.mockup-result-label {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: #c8f050; margin-bottom: 7px; font-family: 'DM Mono', monospace;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.mockup-result-label::before { content: ''; display: block; width: 12px; height: 1px; background: #c8f050; }
+.mockup-result-text { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.5; }
+.mockup-lang { display: inline-block; font-size: 9px; padding: 2px 8px; border-radius: 100px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.35); margin-top: 10px; font-family: 'DM Mono', monospace; }
+
+/* MARQUEE */
+.marquee-section { background: var(--ink); padding: 16px 0; overflow: hidden; }
+.marquee-track { display: flex; gap: 48px; animation: marquee 22s linear infinite; white-space: nowrap; }
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.marquee-item { display: flex; align-items: center; gap: 12px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); flex-shrink: 0; }
+.marquee-dot { color: #c8f050; }
+
+/* SECTIONS */
+.lp-section { padding: 110px 60px; max-width: 1200px; margin: 0 auto; }
+
+.section-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px;
+}
+
+.section-tag::before { content: ''; display: block; width: 24px; height: 1px; background: var(--red); }
+
+.section-title {
+  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-size: clamp(32px, 3.5vw, 52px); line-height: 1.1;
+  letter-spacing: -1px; margin-bottom: 56px;
+}
+
+.section-title em { font-style: italic; color: var(--red); }
+
+/* STEPS */
+.steps-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.features-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.step-item { background: var(--paper); padding: 44px 36px; transition: background 0.3s; }
+.step-item:hover { background: var(--cream); }
+.step-number { font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 900; color: var(--border); line-height: 1; margin-bottom: 20px; letter-spacing: -2px; }
+.step-icon { font-size: 28px; margin-bottom: 14px; }
+.step-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 20px; margin-bottom: 10px; }
+.step-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+/* PROBLEM */
+.problem-section { padding: 110px 60px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+.problem-copy p { font-size: 16px; color: var(--muted); line-height: 1.8; margin-bottom: 22px; max-width: 500px; }
+.problem-list { display: grid; gap: 12px; }
+.problem-list span { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); padding: 14px 16px; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; }
+.problem-demo { background: var(--ink); border-radius: 18px; padding: 28px; box-shadow: 0 30px 70px rgba(0,0,0,0.18); }
+.demo-block { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+.demo-block:last-child { margin-bottom: 0; background: rgba(200,240,80,0.06); border-color: rgba(200,240,80,0.2); }
+.demo-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+.demo-text { color: rgba(255,255,255,0.72); font-size: 14px; line-height: 1.7; }
+.demo-block:last-child .demo-label { color: #c8f050; }
+
+/* WHY */
+.why-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.why-card { background: var(--cream); border: 1px solid var(--border); border-radius: 16px; padding: 34px 28px; }
+.why-card h3 { font-family: 'Playfair Display', serif; font-size: 22px; line-height: 1.15; margin-bottom: 12px; }
+.why-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+/* AUDIENCE */
+.audience-section { background: var(--ink); padding: 110px 60px; }
+.audience-inner { max-width: 1200px; margin: 0 auto; }
+.audience-section .section-tag { color: rgba(255,255,255,0.3); }
+.audience-section .section-title { color: var(--paper); }
+.audience-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.audience-card { border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 36px 28px; position: relative; overflow: hidden; transition: border-color 0.3s, transform 0.3s; }
+.audience-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-4px); }
+.audience-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.audience-card.students::before { background: #c8f050; }
+.audience-card.workers::before { background: var(--red); }
+.audience-card.media::before { background: #4da6ff; }
+.audience-emoji { font-size: 32px; margin-bottom: 16px; }
+.audience-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 20px; color: var(--paper); margin-bottom: 10px; }
+.audience-desc { font-size: 14px; color: rgba(255,255,255,0.4); line-height: 1.7; margin-bottom: 16px; }
+.audience-use { font-size: 11px; font-family: 'DM Mono', monospace; color: rgba(255,255,255,0.2); letter-spacing: 1px; text-transform: uppercase; }
+
+/* TESTIMONIAL */
+.testimonial-section { padding: 110px 60px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.big-quote { font-family: 'Playfair Display', serif; font-size: 160px; line-height: 0.8; color: var(--border); font-weight: 900; margin-bottom: -16px; }
+.testimonial-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(22px, 2.5vw, 32px); line-height: 1.45; letter-spacing: -0.5px; margin-bottom: 28px; }
+.testimonial-author { display: flex; align-items: center; gap: 14px; }
+.author-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg,#c8f050,var(--red)); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 18px; color: var(--ink); }
+.author-name { font-weight: 600; font-size: 15px; }
+.author-role { font-size: 13px; color: var(--muted); }
+.stat-card { background: var(--cream); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 16px; transition: transform 0.2s; }
+.stat-card:hover { transform: translateX(8px); }
+.stat-num { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 44px; line-height: 1; letter-spacing: -2px; margin-bottom: 4px; }
+.stat-num span { color: var(--red); }
+.stat-label { font-size: 13px; color: var(--muted); }
+
+/* LANGUAGES */
+.lang-section { background: var(--cream); padding: 72px 60px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.lang-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap; }
+.lang-text h3 { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 28px; letter-spacing: -0.5px; margin-bottom: 6px; }
+.lang-text p { font-size: 14px; color: var(--muted); }
+.lang-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.lang-tag { padding: 7px 16px; border-radius: 100px; background: var(--paper); border: 1px solid var(--border); font-size: 12px; color: var(--ink); font-family: 'DM Mono', monospace; transition: all 0.2s; cursor: default; }
+.lang-tag:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.lang-tag.featured { background: var(--ink); color: #c8f050; border-color: var(--ink); }
+
+/* CTA */
+.cta-section { padding: 110px 60px; text-align: center; position: relative; overflow: hidden; }
+.cta-section::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(200,240,80,0.07) 0%, transparent 70%); pointer-events: none; }
+.cta-inner { max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
+.cta-section .section-tag { justify-content: center; }
+.cta-title { font-family: 'Playfair Display', serif; font-weight: 900; font-size: clamp(36px, 5vw, 60px); line-height: 1.05; letter-spacing: -1.5px; margin-bottom: 20px; }
+.cta-title em { font-style: italic; color: var(--red); }
+.cta-sub { font-size: 16px; color: var(--muted); line-height: 1.7; margin-bottom: 40px; }
+.cta-actions { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.cta-note { margin-top: 18px; font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+
+/* FOOTER */
+footer { background: var(--ink); color: rgba(255,255,255,0.3); padding: 40px 60px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-logo { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 20px; color: var(--paper); }
+.footer-logo span { color: var(--red); }
+.footer-copy { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { font-size: 13px; color: rgba(255,255,255,0.3); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--paper); }
+
+/* REVEAL ANIMATION */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ============================================================
+   APP SECTION STYLES
+   ============================================================ */
+
+#app-section {
+  --app-bg: #0a0a0f;
+  --app-surface: #13131a;
+  --app-border: rgba(255,255,255,0.08);
+  --app-text: #f0ede8;
+  --app-muted: rgba(240,237,232,0.45);
+  --app-accent: #c8f050;
+  --app-radius: 16px;
+  --app-transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--app-bg);
+  color: var(--app-text);
+  position: relative;
+  transition: background var(--app-transition);
+  padding: 80px 0 0;
+}
+
+.app-divider {
+  background: var(--ink);
+  padding: 56px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-divider::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(200,240,80,0.1) 0%, transparent 70%);
+}
+
+.app-divider-tag {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+
+.app-divider-tag::before, .app-divider-tag::after {
+  content: ''; display: block; width: 32px; height: 1px; background: rgba(255,255,255,0.15);
+}
+
+.app-divider h2 {
+  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-size: clamp(28px, 4vw, 48px); color: var(--paper);
+  letter-spacing: -1px; line-height: 1.1; position: relative; z-index: 1;
+}
+
+.app-divider h2 em { font-style: italic; color: #c8f050; }
+
+.app-bg-orb {
+  position: absolute; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, var(--app-accent) 0%, transparent 70%);
+  opacity: 0.05; top: -200px; right: -200px; pointer-events: none;
+  transition: background var(--app-transition);
+  animation: orbFloat 8s ease-in-out infinite;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(-30px,20px) scale(1.05); }
+  66% { transform: translate(20px,-30px) scale(0.97); }
+}
+
+.app-wrapper {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 48px 20px 80px; max-width: 720px; margin: 0 auto;
+}
+
+.app-header { text-align: center; margin-bottom: 40px; }
+
+.app-logo {
+  font-family: 'Clash Display', sans-serif; font-weight: 700;
+  font-size: 38px; letter-spacing: -1px; line-height: 1; margin-bottom: 8px;
+}
+
+.app-logo span { color: var(--app-accent); transition: color var(--app-transition); }
+.app-tagline { font-size: 13px; color: var(--app-muted); letter-spacing: 0.5px; transition: color var(--app-transition); }
+
+.app-version {
+  display: inline-block; font-size: 10px; letter-spacing: 2px;
+  padding: 3px 10px; border-radius: 100px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--app-border);
+  color: var(--app-muted); margin-top: 10px; transition: all var(--app-transition);
+}
+
+.mood-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 14px; border-radius: 100px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--app-border);
+  font-size: 12px; color: var(--app-muted);
+  margin-top: 12px; transition: all var(--app-transition); opacity: 0;
+}
+
+.mood-badge.visible { opacity: 1; }
+
+.mood-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--app-accent); transition: background var(--app-transition);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
+
+/* NOTICE */
+.app-notice {
+  width: 100%; background: rgba(200,240,80,0.06);
+  border: 1px solid rgba(200,240,80,0.15); border-radius: 12px;
+  padding: 13px 16px; font-size: 12.5px; color: var(--app-muted);
+  line-height: 1.6; margin-bottom: 14px; transition: all var(--app-transition);
+}
+
+.app-notice a { color: var(--app-accent); text-decoration: none; }
+
+/* INPUT CARD */
+.input-card {
+  width: 100%; background: var(--app-surface); border: 1.5px solid var(--app-border);
+  border-radius: var(--app-radius); padding: 22px; margin-bottom: 14px;
+  transition: background var(--app-transition), border-color var(--app-transition);
+}
+
+.input-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--app-muted); margin-bottom: 10px; transition: color var(--app-transition); }
+
+textarea {
+  width: 100%; min-height: 150px; background: transparent;
+  border: none; outline: none; color: var(--app-text);
+  font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.7;
+  resize: vertical; transition: color var(--app-transition);
+}
+
+textarea::placeholder { color: var(--app-muted); }
+.char-count { text-align: right; font-size: 11px; color: var(--app-muted); margin-top: 6px; transition: color var(--app-transition); }
+
+/* MODE TOGGLE */
+.mode-toggle {
+  width: 100%; display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; margin-bottom: 14px;
+}
+
+.mode-btn {
+  background: var(--app-surface);
+  border: 1.5px solid var(--app-border);
+  border-radius: var(--app-radius);
+  padding: 13px 8px;
+  cursor: pointer; transition: all 0.25s;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  font-family: 'DM Sans', sans-serif;
+  position: relative; overflow: hidden;
+}
+
+.mode-btn::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: var(--app-accent);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.25s;
+}
+
+.mode-btn.active::before { transform: scaleX(1); }
+.mode-btn:hover { border-color: rgba(255,255,255,0.18); }
+
+.mode-btn.active {
+  background: rgba(200,240,80,0.06);
+  border-color: var(--app-accent);
+}
+
+.mode-icon { font-size: 22px; margin-bottom: 2px; transition: transform 0.25s; }
+.mode-btn.active .mode-icon { transform: scale(1.15); }
+
+.mode-label {
+  font-family: 'Clash Display', sans-serif;
+  font-weight: 600; font-size: 15px;
+  color: var(--app-text);
+  transition: color var(--app-transition);
+}
+
+.mode-btn.active .mode-label { color: var(--app-accent); }
+
+.mode-desc {
+  font-size: 10.5px; color: var(--app-muted);
+  transition: color var(--app-transition);
+  text-align: center;
+}
+
+/* EXPLAIN ANNOTATIONS */
+.explain-tag {
+  display: inline;
+  background: rgba(200,240,80,0.1);
+  border: 1px solid rgba(200,240,80,0.25);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-style: normal;
+}
+.explain-eq { color: var(--app-muted); font-size: 0.82em; }
+.explain-def { color: var(--app-accent); font-size: 0.82em; font-style: normal; }
+
+/* SPLIT BUTTON */
+.simplify-split {
+  flex: 1; display: flex; align-items: stretch;
+  background: var(--app-accent);
+  border-radius: 12px; overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.simplify-split:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(200,240,80,0.25); }
+.simplify-split:active { transform: translateY(0); }
+.simplify-split:has(.split-action:disabled) { opacity: 0.6; }
+.split-action {
+  flex: 1; padding: 17px;
+  background: transparent; border: none;
+  font-family: 'Clash Display', sans-serif; font-weight: 600; font-size: 17px;
+  color: #0a0a0f; cursor: pointer;
+}
+.split-action:disabled { cursor: not-allowed; }
+.split-divider {
+  width: 1px; flex-shrink: 0;
+  background: rgba(0,0,0,0.18);
+  margin: 10px 0;
+}
+.split-level {
+  padding: 0 28px 0 12px;
+  background: transparent; border: none;
+  font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 12px;
+  color: #0a0a0f; cursor: pointer;
+  appearance: none; -webkit-appearance: none; outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%230a0a0f' opacity='0.45'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  background-color: transparent;
+}
+.split-level:focus { outline: none; }
+
+/* OUTPUT LANGUAGE SELECTOR */
+.lang-select-row {
+  width: 100%; margin-bottom: 14px;
+  background: var(--app-surface);
+  border: 1.5px solid var(--app-border);
+  border-radius: var(--app-radius);
+  padding: 16px 18px;
+  transition: background var(--app-transition), border-color var(--app-transition);
+}
+
+.lang-select-label {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--app-muted); margin-bottom: 12px;
+  transition: color var(--app-transition);
+}
+
+.lang-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+
+.lang-pill {
+  padding: 6px 14px; border-radius: 100px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--app-border);
+  color: var(--app-muted); font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer; transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.lang-pill:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--app-text);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.lang-pill.active {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #0a0a0f; font-weight: 600;
+}
+
+/* BUTTON ROW */
+.btn-row { width: 100%; display: flex; gap: 12px; margin-bottom: 0; }
+
+.scan-btn {
+  width: 58px; flex-shrink: 0;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid var(--app-border);
+  border-radius: 12px; font-size: 22px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+
+.scan-btn:hover { background: rgba(255,255,255,0.14); transform: translateY(-2px); }
+.scan-btn:active { transform: translateY(0); }
+
+.scan-loader { display: none; }
+.scan-loader.active { display: flex; }
+.scan-btn-text.hidden { display: none; }
+
+/* SCANNER PREVIEW */
+.scanner-preview {
+  width: 100%; display: none; flex-direction: column;
+  align-items: center; gap: 12px; margin-bottom: 14px;
+}
+
+.scanner-preview.visible { display: flex; }
+
+.scanner-preview-inner {
+  width: 100%; border-radius: 16px; overflow: hidden;
+  position: relative; background: #000;
+  border: 1.5px solid var(--app-border);
+}
+
+.scanner-preview-inner img {
+  width: 100%; max-height: 280px;
+  object-fit: cover; display: block;
+  opacity: 0.85;
+}
+
+.scanner-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+}
+
+.scanner-corner {
+  position: absolute; width: 24px; height: 24px;
+  border-color: var(--app-accent); border-style: solid;
+  transition: border-color var(--app-transition);
+}
+
+.scanner-corner.tl { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.scanner-corner.tr { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.scanner-corner.bl { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.scanner-corner.br { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+.scanner-line {
+  position: absolute; left: 12px; right: 12px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--app-accent), transparent);
+  top: 50%; animation: scanLine 2s ease-in-out infinite;
+  transition: background var(--app-transition);
+}
+
+@keyframes scanLine {
+  0%, 100% { top: 20%; opacity: 0.8; }
+  50% { top: 80%; opacity: 1; }
+}
+
+.scanner-retake {
+  background: rgba(255,80,80,0.12);
+  border: 1px solid rgba(255,80,80,0.25);
+  border-radius: 100px; padding: 7px 18px;
+  color: #ff8080; font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer; transition: all 0.2s;
+}
+
+.scanner-retake:hover { background: rgba(255,80,80,0.2); }
+
+
+.loader { display: none; align-items: center; justify-content: center; gap: 8px; }
+.loader.active { display: flex; }
+.btn-text { display: block; }
+.btn-text.hidden { display: none; }
+
+.dot-loader span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #0a0a0f; animation: dotBounce 1.2s ease infinite; }
+.dot-loader span:nth-child(2) { animation-delay: 0.2s; }
+.dot-loader span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce { 0%,80%,100%{transform:scale(0.6);opacity:0.4;} 40%{transform:scale(1);opacity:1;} }
+
+/* ERROR */
+.error-msg { width: 100%; background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.25); border-radius: 12px; padding: 13px 16px; font-size: 13px; color: #ff8080; margin-top: 14px; display: none; }
+.error-msg.visible { display: block; }
+
+/* RESULT */
+.result-card {
+  width: 100%; background: var(--app-surface); border: 1.5px solid var(--app-border);
+  border-radius: var(--app-radius); padding: 26px; margin-top: 20px; display: none;
+  transition: background var(--app-transition), border-color var(--app-transition);
+  animation: revealCard 0.6s ease both;
+}
+
+@keyframes revealCard { from{opacity:0;transform:translateY(16px) scale(0.98);} to{opacity:1;transform:none;} }
+
+.result-card.visible { display: block; }
+
+.result-top { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+
+.result-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--app-accent); display: flex; align-items: center; gap: 8px; transition: color var(--app-transition); }
+.result-label::before { content: ''; display: block; width: 18px; height: 1.5px; background: var(--app-accent); transition: background var(--app-transition); }
+
+.lang-badge { display: none; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 100px; background: rgba(255,255,255,0.06); border: 1px solid var(--app-border); font-size: 11px; color: var(--app-muted); transition: all var(--app-transition); }
+
+.result-text { font-family: 'Instrument Serif', serif; font-size: 21px; line-height: 1.55; color: var(--app-text); transition: color var(--app-transition); margin-bottom: 18px; }
+
+.result-meta { padding-top: 14px; border-top: 1px solid var(--app-border); display: flex; align-items: center; justify-content: space-between; transition: border-color var(--app-transition); flex-wrap: wrap; gap: 8px; }
+.theme-info { font-size: 12px; color: var(--app-muted); transition: color var(--app-transition); }
+.result-actions { display: flex; gap: 8px; }
+
+.copy-btn, .share-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--app-border); border-radius: 8px; padding: 6px 14px; color: var(--app-text); font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+.copy-btn:hover, .share-btn:hover { background: rgba(255,255,255,0.12); }
+
+/* FEEDBACK */
+.feedback-row { display: flex; align-items: center; gap: 10px; padding-top: 12px; margin-top: 2px; border-top: 1px solid var(--app-border); transition: border-color var(--app-transition); }
+.feedback-label { font-size: 11px; color: var(--app-muted); transition: color var(--app-transition); }
+.feedback-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--app-border); border-radius: 8px; padding: 5px 12px; font-size: 15px; line-height: 1; cursor: pointer; transition: all 0.18s; }
+.feedback-btn:hover:not(:disabled) { background: rgba(255,255,255,0.14); transform: scale(1.12); }
+.feedback-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+.feedback-btn.selected-like  { background: rgba(100,220,120,0.18); border-color: rgba(100,220,120,0.5); }
+.feedback-btn.selected-dislike { background: rgba(255,100,100,0.15); border-color: rgba(255,100,100,0.4); }
+.feedback-thanks { font-size: 12px; color: var(--app-accent); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.feedback-thanks.visible { opacity: 1; }
+
+/* HISTORY */
+.history-section { width: 100%; margin-top: 36px; display: none; }
+.history-section.visible { display: block; }
+.history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--app-border); transition: border-color var(--app-transition); }
+.history-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--app-muted); transition: color var(--app-transition); }
+.clear-btn { background: none; border: none; font-size: 11px; color: var(--app-muted); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: color 0.2s; }
+.clear-btn:hover { color: var(--app-text); }
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+.history-item { background: var(--app-surface); border: 1px solid var(--app-border); border-radius: 12px; padding: 13px 15px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.history-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--app-accent); transition: background var(--app-transition); }
+.history-item:hover { border-color: rgba(255,255,255,0.18); transform: translateX(4px); }
+.history-item-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.history-mood { font-size: 10px; padding: 2px 8px; border-radius: 100px; background: rgba(255,255,255,0.08); color: var(--app-muted); }
+.history-lang { font-size: 10px; color: var(--app-muted); }
+.history-time { font-size: 10px; color: var(--app-muted); margin-left: auto; }
+.history-simplified { font-size: 13px; color: var(--app-text); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.history-hint { font-size: 10px; color: var(--app-muted); margin-top: 4px; opacity: 0.5; }
+
+/* APP HOW IT WORKS */
+.app-how { width: 100%; margin-top: 48px; }
+.app-how-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--app-muted); margin-bottom: 14px; text-align: center; }
+.app-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.app-step { background: var(--app-surface); border: 1px solid var(--app-border); border-radius: 12px; padding: 14px; text-align: center; transition: background var(--app-transition), border-color var(--app-transition); }
+.app-step-icon { font-size: 20px; margin-bottom: 7px; }
+.app-step-text { font-size: 11px; color: var(--app-muted); line-height: 1.5; }
+
+/* TABLET */
+@media (max-width: 1100px) {
+  .features-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+/* SCAN DEBUG PANEL */
+.scan-debug {
+  width: 100%; margin-top: 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px; overflow: hidden;
+  display: none; transition: border-color var(--app-transition);
+}
+.scan-debug.visible { display: block; }
+.scan-debug-toggle {
+  width: 100%; background: rgba(255,255,255,0.03); border: none;
+  padding: 9px 14px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  color: var(--app-muted); font-size: 11px; letter-spacing: 0.4px;
+  font-family: 'DM Sans', sans-serif; transition: background 0.2s, color 0.2s;
+}
+.scan-debug-toggle:hover { background: rgba(255,255,255,0.07); color: var(--app-text); }
+.scan-debug-body { display: none; flex-direction: column; gap: 10px; padding: 12px 14px; }
+.scan-debug-body.open { display: flex; }
+.scan-debug-stage { display: flex; flex-direction: column; gap: 4px; }
+.scan-debug-stage-label {
+  font-size: 9.5px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--app-accent); font-family: 'DM Mono', monospace;
+}
+.scan-debug-text {
+  margin: 0; font-size: 11px; line-height: 1.55;
+  font-family: 'DM Mono', monospace;
+  color: rgba(240,237,232,0.55); white-space: pre-wrap;
+  word-break: break-word; max-height: 110px; overflow-y: auto;
+  background: rgba(255,255,255,0.03); border-radius: 6px;
+  padding: 7px 9px;
+}
+
+/* CROP EDITOR */
+.crop-editor {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.94);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 28px 16px 36px; gap: 16px;
+}
+.crop-editor.visible { display: flex; }
+.crop-editor-header {
+  width: 100%; max-width: 620px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.crop-editor-title {
+  color: #f0ede8; font-size: 15px;
+  font-family: 'Clash Display', sans-serif; font-weight: 600;
+}
+.crop-editor-hint {
+  color: rgba(240,237,232,0.45); font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+}
+.crop-canvas-wrap {
+  flex: 1; width: 100%; display: flex;
+  align-items: center; justify-content: center; overflow: hidden;
+}
+#cropCanvas {
+  display: block; touch-action: none;
+  border-radius: 10px; cursor: crosshair;
+  max-width: 100%; max-height: 100%;
+}
+.crop-editor-actions {
+  display: flex; gap: 8px; width: 100%; max-width: 620px;
+}
+.crop-cancel-btn {
+  flex: 1; padding: 14px;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 12px; color: #f0ede8;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer;
+  transition: background 0.2s;
+}
+.crop-cancel-btn:hover { background: rgba(255,255,255,0.13); }
+.crop-reset-btn {
+  padding: 14px 16px; background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 12px; color: rgba(240,237,232,0.55);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+}
+.crop-reset-btn:hover { border-color: rgba(255,255,255,0.3); color: #f0ede8; }
+.crop-confirm-btn {
+  flex: 2; padding: 14px;
+  background: #c8f050; border: none;
+  border-radius: 12px; color: #0a0a0f;
+  font-family: 'Clash Display', sans-serif; font-weight: 600; font-size: 15px;
+  cursor: pointer; transition: background 0.2s;
+}
+.crop-confirm-btn:hover { background: #d4f565; }
+
+/* MOBILE */
+@media (max-width: 768px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  .hero { grid-template-columns: 1fr; min-height: auto; }
+  .hero-left { padding: 40px 24px 52px; }
+  .hero-right { height: 380px; }
+  .lp-section { padding: 60px 24px; }
+  .step-item { padding: 28px 20px; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+  .problem-section { grid-template-columns: 1fr; padding: 72px 24px; gap: 36px; }
+  .why-grid { grid-template-columns: 1fr; }
+  .audience-section { padding: 72px 24px; }
+  .audience-grid { grid-template-columns: 1fr; }
+  .testimonial-section { grid-template-columns: 1fr; padding: 72px 24px; gap: 40px; }
+  .big-quote { font-size: 100px; }
+  .lang-section { padding: 56px 24px; }
+  .lang-inner { flex-direction: column; }
+  .cta-section { padding: 72px 24px; }
+  footer { padding: 36px 24px; flex-direction: column; }
+  .app-steps { grid-template-columns: 1fr; }
+  .result-text { font-size: 19px; }
+}
+</style>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-GN23PF861R"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-GN23PF861R');
+</script>
+</head>
+<body>
+
+<!-- ========== NAV ========== -->
+<nav>
+  <div class="nav-logo">Clear<span>It</span></div>
+  <ul class="nav-links">
+    <li><a href="#how">အသုံးပြုပုံ</a></li>
+    <li><a href="#who">ဘယ်သူများအတွက်လဲ</a></li>
+    <li id="authNavItem">
+      <a href="#" class="nav-cta" onclick="openAuthModal(); return false;" id="authNavBtn">ဝင်ရန် →</a>
+    </li>
+    <li id="userNavItem" style="display:none">
+      <a href="/Clearit/dashboard" style="font-size:12px; color:rgba(255,255,255,0.6); text-decoration:none; margin-right:4px;">📊 ဒက်ရှ်ဘုတ်</a>
+      <span id="userEmail" style="font-size:12px; color:var(--muted);"></span>
+      <a href="#" onclick="signOut(); return false;" style="font-size:12px; color:var(--red); margin-left:12px;">ထွက်ရန်</a>
+    </li>
+  </ul>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-tag">ရှုပ်မသွားစေဘဲ ရှင်းပြပေးတဲ့ AI</div>
+    <h1 class="hero-headline">
+      ဘာစာမဆို<br><em>စက္ကန့်ပိုင်းအတွင်း</em> နားလည်ပါ
+    </h1>
+    <p class="hero-sub">ClearIt က ရှုပ်ထွေးတဲ့ စာသားတွေကို ဘယ်ဘာသာစကားနဲ့မဆို ရှင်းလင်းပြီး နားလည်လွယ်တဲ့ ရှင်းပြချက်အဖြစ် ပြောင်းပေးပါတယ်။ ကျောင်းသား၊ စာဖတ်သူ၊ သုတေသီနဲ့ နေ့စဉ်လေ့လာသူတိုင်းအတွက် အသုံးဝင်ပါတယ်။</p>
+    <div class="hero-actions">
+      <a href="#app-section" class="btn-primary">ClearIt ကို အခမဲ့ စမ်းသုံးမယ် →</a>
+      <a href="#app-section" class="btn-secondary">စာသားကို အခုပဲ ရှင်းလင်းမယ် ↓</a>
+    </div>
+    <div class="trust-signals">
+      <span>ရှုပ်တဲ့ prompt မလိုပါ</span>
+      <span>စာထည့်ပြီး မြန်မြန်နားလည်ပါ</span>
+      <span>🌐 ဘာသာစကား ၉ မျိုး</span>
+      <span>✓ အကောင့်ဖွင့်စရာမလို</span>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-mockup">
+      <div class="mockup-card" id="heroCard">
+        <div id="heroInputState">
+          <div class="mockup-label">မူရင်းစာ</div>
+          <textarea id="heroInput" class="hero-textarea" placeholder="ရှုပ်ထွေးတဲ့ စာသားကို ဒီမှာ ထည့်ပါ...">အလင်းဓာတ်ပြုခြင်းသည် ကလိုရိုဖီးလ်ပါဝင်ပြီး အလင်းစွမ်းအင်ကို ဓာတုစွမ်းအင်အဖြစ် ပြောင်းလဲပေးသော ဇီဝဓာတု လုပ်ငန်းစဉ်ဖြစ်သည်။</textarea>
+          <button class="mockup-btn" onclick="heroSimplify()" id="heroBtn">
+            <span id="heroBtnText">စာသားကို အခုပဲ ရှင်းလင်းမယ်</span>
+            <span id="heroLoader" style="display:none">...</span>
+          </button>
+          <div class="mockup-result">
+            <div class="mockup-result-label">ရလဒ်</div>
+            <div class="mockup-result-text">အပင်တွေက နေရောင်ခြည်ကို အသုံးပြုပြီး အစာပြုလုပ်တဲ့ လုပ်ငန်းစဉ်ပါ။</div>
+            <div class="mockup-lang">မြန်မာ · သိပ္ပံ</div>
+          </div>
+        </div>
+        <div id="heroResultState" style="display:none">
+          <div class="mockup-result" id="heroResult" style="margin-bottom:12px">
+            <div class="mockup-result-label">ရှင်းလင်းထားသည်</div>
+            <div class="mockup-result-text" id="heroResultText"></div>
+            <div class="mockup-lang" id="heroLang"></div>
+          </div>
+          <button class="mockup-btn-reset" onclick="heroReset()">← နောက်တစ်ခု စမ်းမယ်</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ကျောင်းသားများ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> နေ့စဉ်စာဖတ်သူများ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> သုတေသီများ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> အင်္ဂလိပ်</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> မြန်မာ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ဂျပန်</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ချက်ချင်းရှင်းလင်းမှု</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ဘာသာစကားမရွေး</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> နည်းနည်းဖတ်ပြီး ပိုနားလည်ပါ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ကျောင်းသားများ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> နေ့စဉ်စာဖတ်သူများ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> သုတေသီများ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> အင်္ဂလိပ်</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> မြန်မာ</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ဂျပန်</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ချက်ချင်းရှင်းလင်းမှု</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> ဘာသာစကားမရွေး</div>
+    <div class="marquee-item"><span class="marquee-dot">✦</span> နည်းနည်းဖတ်ပြီး ပိုနားလည်ပါ</div>
+  </div>
+</div>
+
+<!-- PROBLEM / SOLUTION -->
+<section class="problem-section">
+  <div class="problem-copy reveal">
+    <div class="section-tag">ပြဿနာ</div>
+    <h2 class="section-title">အချက်အလက်များလွန်းတယ်။<br><em>ရှင်းလင်းမှု နည်းလွန်းတယ်။</em></h2>
+    <p>ရှည်လျားတဲ့ ဆောင်းပါးတွေ၊ ပညာရပ်ဆိုင်ရာ စာရေးသားမှုတွေ၊ တရားဝင်စာရွက်စာတမ်းတွေနဲ့ ရှုပ်ထွေးတဲ့ ရှင်းပြချက်တွေက အချိန်ကုန်စေပြီး စိတ်ရှုပ်စေပါတယ်။</p>
+    <div class="problem-list">
+      <span>✓ ပိုမြန်မြန် နားလည်ပါ</span>
+      <span>✓ စိတ်ရှုပ်မှု လျှော့ချပါ</span>
+      <span>✓ ပိုထိရောက်စွာ လေ့လာပါ</span>
+      <span>✓ အရေးကြီးတာကိုပဲ အာရုံစိုက်ပါ</span>
+    </div>
+  </div>
+  <div class="problem-demo reveal">
+    <div class="demo-block">
+      <div class="demo-label">မူရင်း</div>
+      <div class="demo-text">စာချုပ်ပါ တာဝန်သည် အထက်ဖော်ပြပါ စည်းကမ်းချက်များကို လက်ခံသူဘက်မှ ပြည့်မီခြင်းအပေါ် မူတည်ပါသည်။</div>
+    </div>
+    <div class="demo-block">
+      <div class="demo-label">ClearIt ပြီးနောက်</div>
+      <div class="demo-text">အရင်ဖော်ပြထားတဲ့ စည်းကမ်းချက်တွေကို တစ်ဖက်လူက ပြည့်မီမှသာ ဒီတာဝန်ကို လုပ်ရပါမယ်။</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="how">
+  <div class="lp-section">
+    <div class="section-tag reveal">ClearIt က ဘာလုပ်ပေးလဲ</div>
+    <h2 class="section-title reveal">ခက်ခဲတဲ့ စာသားတွေကို <em>နားလည်လွယ်အောင်</em> ပြောင်းပေးပါတယ်</h2>
+    <div class="features-grid reveal">
+      <div class="step-item">
+        <div class="step-number">01</div>
+        <div class="step-icon">📋</div>
+        <div class="step-title">ခက်ခဲတဲ့ စာသားကို ရှင်းလင်းစေပါ</div>
+        <div class="step-desc">ပညာရပ်ဆိုင်ရာ၊ နည်းပညာဆိုင်ရာ ဒါမှမဟုတ် ရှုပ်ထွေးတဲ့ စာတွေကို ဖတ်ရလွယ်တဲ့ ရှင်းပြချက်အဖြစ် ပြောင်းပေးပါတယ်။</div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">02</div>
+        <div class="step-icon">🌐</div>
+        <div class="step-title">ဘာသာစကားများစွာနဲ့ အလုပ်လုပ်ပါတယ်</div>
+        <div class="step-desc">အဓိပ္ပာယ် မပျောက်စေဘဲ ဘာသာစကားအမျိုးမျိုးအတွက် ရှင်းလင်းပေးပြီး အကျဉ်းချုပ်ပေးပါတယ်။</div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">03</div>
+        <div class="step-icon">⚡</div>
+        <div class="step-title">AI ရလဒ် မြန်မြန်ရပါ</div>
+        <div class="step-desc">ရှင်းလင်းမှုကို အမြန်လိုတဲ့အချိန်မှာ အလွန်မြန်တဲ့ AI လုပ်ဆောင်မှုနဲ့ ရလဒ်ကို ချက်ချင်းနီးပါး ရစေပါတယ်။</div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">04</div>
+        <div class="step-icon">📝</div>
+        <div class="step-title">တစ်ချက်နှိပ်ရုံနဲ့ အကျဉ်းချုပ်ပါ</div>
+        <div class="step-desc">ရှည်လျားတဲ့ စာပိုဒ်တွေ ဖတ်စရာမလိုဘဲ၊ အသေးစိတ် prompt ရေးစရာမလိုဘဲ အဓိကအချက်တွေကို မြန်မြန်ရယူပါ။</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY CLEARIT -->
+<section class="lp-section">
+  <div class="section-tag reveal">ဘာကြောင့် ClearIt လဲ</div>
+  <h2 class="section-title reveal"><em>ခက်ခဲတဲ့ အချက်အလက်တွေကို</em> အမြန်ဆုံးနားလည်နိုင်တဲ့ နည်းလမ်း</h2>
+  <div class="why-grid reveal">
+    <div class="why-card">
+      <h3>Chatbot ကို prompt ရေးတာထက် မြန်ပါတယ်</h3>
+      <p>ရှည်ရှည်ဝေးဝေး ညွှန်ကြားချက် မလိုပါ။ စာထည့်လိုက်တာနဲ့ ချက်ချင်းရှင်းလင်းလာပါတယ်။</p>
+    </div>
+    <div class="why-card">
+      <h3>နားလည်ဖို့အတွက် ဒီဇိုင်းလုပ်ထားပါတယ်</h3>
+      <p>ClearIt က အဆုံးမရှိ AI စကားပြောခန်းထက် အချက်အလက်ကို ရှင်းလင်းနားလည်အောင် လုပ်ပေးတာကို အဓိကထားပါတယ်။</p>
+    </div>
+    <div class="why-card">
+      <h3>နေ့စဉ်လေ့လာမှုအတွက် တည်ဆောက်ထားပါတယ်</h3>
+      <p>အိမ်စာ၊ ဆောင်းပါး၊ သုတေသန၊ အွန်လိုင်းအကြောင်းအရာနဲ့ စာရွက်စာတမ်းတွေကို စက္ကန့်ပိုင်းအတွင်း ဖတ်ရလွယ်စေပါတယ်။</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IT'S FOR -->
+<section id="who" class="audience-section">
+  <div class="audience-inner">
+    <div class="section-tag reveal">ဘယ်သူများအတွက်လဲ</div>
+    <h2 class="section-title reveal">ရှင်းလင်းမှုကို <em>အမြန်</em> လိုသူများအတွက်</h2>
+    <div class="audience-grid reveal">
+      <div class="audience-card students">
+        <div class="audience-emoji">🎓</div>
+        <div class="audience-title">ကျောင်းသားများ</div>
+        <div class="audience-desc">စာအုပ်၊ သုတေသနစာတမ်းနဲ့ အတန်းမှတ်စုတွေကို လေ့လာရလွယ်တဲ့ ရှင်းပြချက်အဖြစ် ပြောင်းပါ။</div>
+        <div class="audience-use">စာအုပ် · သုတေသန · စာမေးပွဲ</div>
+      </div>
+      <div class="audience-card workers">
+        <div class="audience-emoji">💼</div>
+        <div class="audience-title">ဘာသာစကားစုံ စာဖတ်သူများ</div>
+        <div class="audience-desc">ခက်ခဲတဲ့ အင်္ဂလိပ်စာ ဒါမှမဟုတ် နိုင်ငံခြားဘာသာ အကြောင်းအရာတွေကို chatbot အပြည့်သုံးစရာမလိုဘဲ နားလည်ပါ။</div>
+        <div class="audience-use">ဆောင်းပါး · စာရွက်စာတမ်း · ဘာသာပြန်</div>
+      </div>
+      <div class="audience-card media">
+        <div class="audience-emoji">📰</div>
+        <div class="audience-title">မြန်မြန်လေ့လာသူများ</div>
+        <div class="audience-desc">အချိန်နည်းတဲ့အခါ ဆောင်းပါး၊ မူဝါဒ၊ အစီရင်ခံစာနဲ့ အွန်လိုင်းစာတွေထဲက အဓိကအချက်ကို မြန်မြန်ရယူပါ။</div>
+        <div class="audience-use">ဖတ်ရှုခြင်း · သုတေသန · ထိရောက်မှု</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section>
+  <div class="testimonial-section">
+    <div class="testimonial-left reveal">
+      <div class="big-quote">"</div>
+      <p class="testimonial-text">ClearIt ကြောင့် အင်္ဂလိပ်ဆောင်းပါးရှည်တွေကို ပိုမြန်မြန်နားလည်နိုင်လာပါတယ်။</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">M</div>
+        <div class="author-info">
+          <span class="author-name">May</span>
+          <span class="author-role">အစောပိုင်းအသုံးပြုသူ အကြံပြုချက်</span>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-right reveal">
+      <div class="stat-card">
+        <div class="stat-num">9<span>+</span></div>
+        <div class="stat-label">ဘာသာစကားစုံ လေ့လာဖတ်ရှုမှုအတွက် ရလဒ်ဘာသာစကားများ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">မြန်</div>
+        <div class="stat-label">မြန်မြန်နားလည်နိုင်ဖို့ Groq ဖြင့် လုပ်ဆောင်တဲ့ ရလဒ်များ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">0<span>$</span></div>
+        <div class="stat-label">စတင်သုံးရန် အခမဲ့ - ကတ်မလို၊ ဒေါင်းလုဒ်မလို</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LANGUAGES -->
+<section class="lang-section">
+  <div class="lang-inner">
+    <div class="lang-text reveal">
+      <h3>ဘာသာစကားတိုင်းအတွက် ရှင်းလင်းမှု</h3>
+      <p>အဓိကအယူအဆ မပျောက်စေဘဲ<br>ဘာသာစကားအမျိုးမျိုးနဲ့ ရှင်းလင်း/အကျဉ်းချုပ်ပေးပါ။</p>
+    </div>
+    <div class="lang-tags reveal">
+      <span class="lang-tag featured">🇲🇲 မြန်မာ</span>
+      <span class="lang-tag featured">🇬🇧 အင်္ဂလိပ်</span>
+      <span class="lang-tag featured">🇯🇵 ဂျပန်</span>
+      <span class="lang-tag">🇫🇷 ပြင်သစ်</span>
+      <span class="lang-tag">🇪🇸 စပိန်</span>
+      <span class="lang-tag">🇨🇳 တရုတ်</span>
+      <span class="lang-tag">🇦🇪 အာရဗီ</span>
+      <span class="lang-tag">🇰🇷 ကိုရီးယား</span>
+      <span class="lang-tag">+ အခြားများစွာ</span>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <div class="section-tag reveal">အခုပဲ စတင်ပါ - အခမဲ့ပါ</div>
+    <h2 class="cta-title reveal">နည်းနည်းဖတ်ပါ။<br><em>ပိုနားလည်ပါ။</em></h2>
+    <p class="cta-sub reveal">ပထမဆုံး ရှုပ်ထွေးတဲ့ စာသားကို ထည့်ပြီး ရှင်းလင်းတဲ့ ရှင်းပြချက်အဖြစ် ပြောင်းသွားတာကို ကြည့်ပါ။ အကောင့်ဖွင့်စရာမလို၊ ကတ်မလို။ စာထည့်ပြီး ပိုမြန်မြန်နားလည်ပါ။</p>
+    <div class="cta-actions reveal">
+      <a href="#app-section" class="btn-primary">ClearIt ကို အခမဲ့ စမ်းသုံးမယ် →</a>
+    </div>
+    <p class="cta-note reveal">AI ဖြင့် ရှင်းလင်းမှု · မည်သည့်စက်မှာမဆို သုံးနိုင် · ဘာသာစကားမရွေး</p>
+  </div>
+</section>
+
+<!-- ========== APP SECTION ========== -->
+<div id="app-section">
+  <div class="app-divider">
+    <div class="app-divider-tag">အက်ပ်</div>
+    <h2>စာထည့်ပါ။<br><em>ပိုမြန်မြန်</em> နားလည်ပါ။</h2>
+  </div>
+
+  <div class="app-bg-orb"></div>
+
+  <div class="app-wrapper">
+    <div class="app-header">
+      <div class="app-logo">Clear<span>It</span></div>
+      <div class="app-tagline">ခက်ခဲတဲ့ အချက်အလက်တွေကို နားလည်လွယ်စေတဲ့ AI။</div>
+      <div class="app-version">v5.0 - ရှင်းလင်းခြင်း + အကျဉ်းချုပ်ခြင်း · စကင်နာ · ☁️ Cloud Sync</div>
+
+      <!-- Usage badge — hidden while payment is off -->
+      <div style="display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap; justify-content:center;">
+        <div id="usageBadge" style="display:none;"></div>
+        <div id="planBadge" style="display:none;"></div>
+        <button id="upgradeBtn" style="display:none;"></button>
+      </div>
+
+      <div class="mood-badge" id="moodBadge">
+        <div class="mood-dot"></div>
+        <span id="moodLabel">အကြောင်းအရာ စစ်ဆေးနေသည်...</span>
+      </div>
+    </div>
+
+    <div class="input-card">
+      <div class="input-label">သင့်ရဲ့ ရှုပ်ထွေးတဲ့ စာသား</div>
+      <textarea id="inputText" placeholder="ရှုပ်ထွေးတဲ့ စာသားကို ထည့်ပါ - အင်္ဂလိပ်၊ မြန်မာ၊ ဂျပန် သို့မဟုတ် မည်သည့်ဘာသာစကားမဆို..."></textarea>
+      <div class="char-count"><span id="charCount">0</span> လုံး</div>
+    </div>
+
+    <!-- MODE TOGGLE -->
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="simplify" onclick="setMode('simplify')">
+        <span class="mode-icon">✦</span>
+        <span class="mode-label">ရှင်းလင်းမယ်</span>
+        <span class="mode-desc">ဖတ်ရလွယ်အောင် ပြောင်းမယ်</span>
+      </button>
+      <button class="mode-btn" data-mode="summarize" onclick="setMode('summarize')">
+        <span class="mode-icon">📝</span>
+        <span class="mode-label">အကျဉ်းချုပ်မယ်</span>
+        <span class="mode-desc">အဓိကအချက်တွေ ထုတ်မယ်</span>
+      </button>
+      <button class="mode-btn" data-mode="explain" onclick="setMode('explain')">
+        <span class="mode-icon">💡</span>
+        <span class="mode-label">ရှင်းပြမယ်</span>
+        <span class="mode-desc">ခက်တဲ့စကားလုံးတွေကို တစ်ကြောင်းတည်း ရှင်းမယ်</span>
+      </button>
+    </div>
+
+    <!-- OUTPUT LANGUAGE SELECTOR -->
+    <div class="lang-select-row">
+      <div class="lang-select-label" id="langSelectLabel">✦ ရလဒ်ကို ရှင်းလင်းပေးမည့် ဘာသာစကား</div>
+      <div class="lang-pills" id="langPills">
+        <button class="lang-pill" data-lang="English">🇬🇧 အင်္ဂလိပ်</button>
+        <button class="lang-pill active" data-lang="Burmese">🇲🇲 မြန်မာ</button>
+        <button class="lang-pill" data-lang="Japanese">🇯🇵 ဂျပန်</button>
+        <button class="lang-pill" data-lang="Thai">🇹🇭 ထိုင်း</button>
+        <button class="lang-pill" data-lang="Chinese">🇨🇳 တရုတ်</button>
+        <button class="lang-pill" data-lang="Korean">🇰🇷 ကိုရီးယား</button>
+        <button class="lang-pill" data-lang="French">🇫🇷 ပြင်သစ်</button>
+        <button class="lang-pill" data-lang="Arabic">🇦🇪 အာရဗီ</button>
+        <button class="lang-pill" data-lang="Spanish">🇪🇸 စပိန်</button>
+      </div>
+    </div>
+
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleScan(event)" />
+
+    <!-- SCANNER PREVIEW -->
+    <div class="scanner-preview" id="scannerPreview">
+      <div class="scanner-preview-inner">
+        <img id="scannedImage" src="" alt="စကင်ဖတ်ထားသော ပုံ" />
+        <div class="scanner-overlay">
+          <div class="scanner-corner tl"></div>
+          <div class="scanner-corner tr"></div>
+          <div class="scanner-corner bl"></div>
+          <div class="scanner-corner br"></div>
+          <div class="scanner-line"></div>
+        </div>
+      </div>
+      <button class="scanner-retake" onclick="retakeScan()">✕ ပြန်ရိုက်မယ်</button>
+    </div>
+
+    <!-- BUTTON ROW -->
+    <div class="btn-row">
+      <div class="simplify-split">
+        <button class="split-action" id="simplifyBtn" onclick="simplify()">
+          <span class="btn-text" id="btnText">ရှင်းလင်းမယ် ✦</span>
+          <div class="loader" id="loader">
+            <div class="dot-loader"><span></span><span></span><span></span></div>
+          </div>
+        </button>
+        <div class="split-divider"></div>
+        <select class="split-level" id="levelSelect" onchange="setLevel(this.value)">
+          <option value="simple">အလွန်ရှင်းလင်း</option>
+          <option value="standard" selected>ပုံမှန်</option>
+          <option value="detailed">အသေးစိတ်</option>
+        </select>
+      </div>
+      <button class="scan-btn" id="scanBtn" onclick="openScanner()" title="လက်တွေ့စာသားကို စကင်ဖတ်ရန်">
+        <span class="scan-btn-text" id="scanBtnText">📷</span>
+        <div class="loader scan-loader" id="scanLoader">
+          <div class="dot-loader"><span></span><span></span><span></span></div>
+        </div>
+      </button>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="result-card" id="resultCard">
+      <div class="result-top">
+        <div class="result-label" id="resultLabel">ရှင်းလင်းထားသည်</div>
+        <div class="lang-badge" id="langBadge">🌐 <span id="langText"></span></div>
+      </div>
+      <div class="result-text" id="resultText"></div>
+      <div class="result-meta">
+        <span class="theme-info" id="themeInfo"></span>
+        <div class="result-actions">
+          <button class="share-btn" onclick="shareResult()">မျှဝေမယ် ↗</button>
+          <button class="copy-btn" onclick="copyResult()">ကူးမယ်</button>
+        </div>
+      </div>
+      <div class="feedback-row" id="feedbackRow">
+        <span class="feedback-label">အသုံးဝင်ပါသလား?</span>
+        <button class="feedback-btn" id="likeBtn"    onclick="submitFeedback('like')"    title="အသုံးဝင်သည်">👍</button>
+        <button class="feedback-btn" id="dislikeBtn" onclick="submitFeedback('dislike')" title="အသုံးမဝင်ပါ">👎</button>
+        <span class="feedback-thanks" id="feedbackThanks">အကြံပြုချက်အတွက် ကျေးဇူးတင်ပါတယ်!</span>
+      </div>
+    </div>
+
+    <!-- SCAN PIPELINE DEBUG PANEL — only shown after a scan -->
+    <div class="scan-debug" id="scanDebug">
+      <button class="scan-debug-toggle" onclick="toggleScanDebug()">
+        🔬 လုပ်ဆောင်မှုမှတ်တမ်း <span id="scanDebugArrow">▾</span>
+      </button>
+      <div class="scan-debug-body" id="scanDebugBody">
+        <div class="scan-debug-stage">
+          <div class="scan-debug-stage-label">① မူရင်း OCR</div>
+          <pre class="scan-debug-text" id="debugRawOcr"></pre>
+        </div>
+        <div class="scan-debug-stage">
+          <div class="scan-debug-stage-label">② သန့်စင်ပြီး</div>
+          <pre class="scan-debug-text" id="debugCleaned"></pre>
+        </div>
+        <div class="scan-debug-stage">
+          <div class="scan-debug-stage-label">③ နောက်ဆုံးရလဒ်</div>
+          <pre class="scan-debug-text" id="debugFinal"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-section" id="historySection">
+      <div class="history-header">
+        <div class="history-title">☁️ မှတ်တမ်း - <span id="historyCount">0</span> ခု</div>
+        <button class="clear-btn" onclick="clearHistory()">အားလုံးဖျက်မယ်</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- LOGIN PROMPT -->
+    <div id="loginPromptApp" style="display:none; text-align:center; padding:20px 16px; background:rgba(200,240,80,0.08); border:1px solid rgba(200,240,80,0.2); border-radius:16px; margin-top:16px;">
+      <p style="font-size:13px; color:var(--app-muted); margin-bottom:12px;">☁️ စက်အားလုံးမှာ မှတ်တမ်းသိမ်းရန် ဝင်ပါ</p>
+      <button onclick="openAuthModal()" style="background:#c8f050; color:#0a0a0f; border:none; padding:10px 24px; border-radius:100px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans Myanmar','DM Sans',sans-serif;">အခမဲ့ ဝင်မယ် →</button>
+    </div>
+
+    <div class="app-how">
+      <div class="app-how-title">အသုံးပြုပုံ</div>
+      <div class="app-steps">
+        <div class="app-step">
+          <div class="app-step-icon">📋</div>
+          <div class="app-step-text">မည်သည့်ဘာသာစကားမဆို ရှုပ်ထွေးတဲ့ စာသားကို ထည့်ပါ</div>
+        </div>
+        <div class="app-step">
+          <div class="app-step-icon">✦</div>
+          <div class="app-step-text">AI က ဖတ်ပြီး ဘာသာစကားနဲ့ အကြောင်းအရာကို သိရှိပါတယ်</div>
+        </div>
+        <div class="app-step">
+          <div class="app-step-icon">🎨</div>
+          <div class="app-step-text">ရှင်းလင်းတဲ့ ရလဒ်နဲ့ ကိုက်ညီတဲ့ theme ကို ရယူပါ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Clear<span>It</span></div>
+  <div class="footer-copy">© 2026 ClearIt. နားလည်မှုကို ရှင်းလင်းစေသည်။</div>
+  <div class="footer-links">
+    <a href="#app-section">အက်ပ် စမ်းသုံးမယ်</a>
+    <a href="https://forms.gle/dL3WawAYX3aKXskJ6" target="_blank" style="color:#c8f050; font-weight:600;">💬 အကြံပြုချက်ပေးမယ်</a>
+    <a href="mailto:hello@clearit.app">ဆက်သွယ်ရန်</a>
+  </div>
+</footer>
+
+<!-- UPGRADE MODAL — kept in DOM but payment gate is off -->
+<div id="upgradeModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(12,12,14,0.9); backdrop-filter:blur(8px); align-items:center; justify-content:center;">
+  <div style="background:#0d0d14; border:1px solid rgba(200,240,80,0.2); border-radius:24px; padding:48px 40px; width:90%; max-width:440px; position:relative; text-align:center;">
+    <button onclick="closeUpgradeModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:20px; cursor:pointer; color:rgba(255,255,255,0.4);">✕</button>
+    <div style="font-size:48px; margin-bottom:16px;">⚡</div>
+    <h2 style="font-family:'Noto Sans Myanmar','Playfair Display',serif; font-size:28px; color:#f0ede8; margin-bottom:8px;">Pro သို့ အဆင့်မြှင့်ရန်</h2>
+    <p style="color:rgba(240,237,232,0.5); font-size:14px; margin-bottom:32px; font-family:'Noto Sans Myanmar','DM Sans',sans-serif;">အကန့်အသတ်မရှိ အသုံးပြုနိုင်မှု မကြာမီ ရောက်ရှိလာပါမည်။</p>
+    <button onclick="closeUpgradeModal()" style="width:100%; padding:18px; background:#c8f050; color:#0a0a0f; border:none; border-radius:14px; font-size:16px; font-weight:700; font-family:'Noto Sans Myanmar','DM Sans',sans-serif; cursor:pointer;">နားလည်ပါပြီ</button>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="authModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(12,12,14,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center;">
+  <div style="background:#f5f2ec; border-radius:24px; padding:48px 40px; width:90%; max-width:420px; position:relative; box-shadow:0 40px 80px rgba(0,0,0,0.3);">
+    <button onclick="closeAuthModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:20px; cursor:pointer; color:#7a7570;">✕</button>
+    <div style="font-family:'Playfair Display',serif; font-weight:900; font-size:24px; margin-bottom:8px;">Clear<span style="color:#e8341a;">It</span></div>
+    <div style="display:flex; gap:0; margin-bottom:32px; border-bottom:2px solid #d8d2c8;">
+      <button id="tabLogin" onclick="switchTab('login')" style="flex:1; padding:12px; background:none; border:none; font-family:'Noto Sans Myanmar','DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; color:#0c0c0e; border-bottom:2px solid #0c0c0e; margin-bottom:-2px;">ဝင်ရန်</button>
+      <button id="tabSignup" onclick="switchTab('signup')" style="flex:1; padding:12px; background:none; border:none; font-family:'Noto Sans Myanmar','DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; color:#7a7570; border-bottom:2px solid transparent; margin-bottom:-2px;">အကောင့်ဖွင့်ရန်</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div>
+        <label style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7a7570; font-family:'Noto Sans Myanmar','DM Mono',monospace;">အီးမေးလ်</label>
+        <input id="authEmail" type="email" placeholder="your@email.com" style="width:100%; margin-top:6px; padding:14px 16px; border:1.5px solid #d8d2c8; border-radius:12px; font-size:14px; font-family:'DM Sans',sans-serif; outline:none; background:#fff; box-sizing:border-box;" />
+      </div>
+      <div>
+        <label style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7a7570; font-family:'Noto Sans Myanmar','DM Mono',monospace;">စကားဝှက်</label>
+        <input id="authPassword" type="password" placeholder="••••••••" style="width:100%; margin-top:6px; padding:14px 16px; border:1.5px solid #d8d2c8; border-radius:12px; font-size:14px; font-family:'DM Sans',sans-serif; outline:none; background:#fff; box-sizing:border-box;" />
+      </div>
+      <div id="authError" style="display:none; background:#fef2f0; border:1px solid #f9b4a8; border-radius:10px; padding:12px 16px; font-size:13px; color:#c0392b; font-family:'DM Sans',sans-serif;"></div>
+      <button id="authSubmitBtn" onclick="handleAuth()" style="width:100%; padding:16px; background:#0c0c0e; color:#f5f2ec; border:none; border-radius:12px; font-size:15px; font-weight:600; font-family:'Noto Sans Myanmar','DM Sans',sans-serif; cursor:pointer; transition:background 0.2s; margin-top:4px;">ဝင်ရန်</button>
+      <p style="text-align:center; font-size:12px; color:#7a7570; font-family:'Noto Sans Myanmar','DM Sans',sans-serif;">ဆက်လုပ်ခြင်းဖြင့် ဝန်ဆောင်မှုစည်းမျဉ်းများကို သဘောတူပါသည်။</p>
+    </div>
+  </div>
+</div>
+
+<!-- Auth Toast -->
+<div id="authToast" style="display:none; position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#0c0c0e; color:#f5f2ec; padding:14px 24px; border-radius:100px; font-size:13px; font-family:'DM Sans',sans-serif; z-index:1001; white-space:nowrap;"></div>
+
+<!-- Floating login button in app section -->
+<div id="loginPrompt" style="display:none; text-align:center; padding:16px; background:rgba(200,240,80,0.1); border:1px solid rgba(200,240,80,0.3); border-radius:16px; margin-top:16px;">
+  <p style="font-size:13px; color:var(--app-muted); margin-bottom:10px;">သင့်မှတ်တမ်းကို cloud မှာ သိမ်းရန် ဝင်ပါ ☁️</p>
+  <button onclick="openAuthModal()" style="background:#c8f050; color:#0a0a0f; border:none; padding:10px 24px; border-radius:100px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans Myanmar','DM Sans',sans-serif;">အခမဲ့ ဝင်မယ် →</button>
+</div>
+
+<!-- Floating Feedback Button -->
+<a href="https://forms.gle/dL3WawAYX3aKXskJ6" target="_blank" id="feedbackBtn" style="
+  position: fixed; bottom: 24px; right: 24px;
+  background: #c8f050; color: #0a0a0f;
+  font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 13px;
+  padding: 12px 20px; border-radius: 100px; text-decoration: none;
+  box-shadow: 0 4px 20px rgba(200,240,80,0.3); z-index: 999;
+  display: flex; align-items: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;
+" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+  💬 အကြံပြုချက်
+</a>
+
+<script>
+  // ---- SUPABASE AUTH ----
+  const SUPABASE_AUTH_URL = 'https://bblbecczygnnpnvhccub.supabase.co/auth/v1';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibGJlY2N6eWdubnBudmhjY3ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2OTcwOTIsImV4cCI6MjA5MzI3MzA5Mn0.9EiUmjVm29VKfbQJx3xKEVJTtSZVdWe6uFU74E2iy8Q';
+
+  let currentUser = null;
+  let currentTab = 'login';
+
+  function initAuth() {
+    var token = localStorage.getItem('clearit_token');
+    var userData = localStorage.getItem('clearit_user');
+    if (token && userData) {
+      try {
+        currentUser = JSON.parse(userData);
+        updateAuthUI();
+      } catch(e) {
+        localStorage.removeItem('clearit_token');
+        localStorage.removeItem('clearit_user');
+      }
+    } else {
+      var prompt = document.getElementById('loginPrompt');
+      if (prompt) prompt.style.display = 'block';
+    }
+  }
+
+  function updateAuthUI() {
+    var authNav = document.getElementById('authNavItem');
+    var userNav = document.getElementById('userNavItem');
+    var emailEl = document.getElementById('userEmail');
+    var loginPromptApp = document.getElementById('loginPromptApp');
+
+    if (currentUser) {
+      if (authNav) authNav.style.display = 'none';
+      if (userNav) userNav.style.display = 'flex';
+      if (emailEl) emailEl.textContent = currentUser.email;
+      if (loginPromptApp) loginPromptApp.style.display = 'none';
+    } else {
+      if (authNav) authNav.style.display = 'block';
+      if (userNav) userNav.style.display = 'none';
+      if (loginPromptApp) loginPromptApp.style.display = 'block';
+    }
+  }
+
+  function openAuthModal() {
+    document.getElementById('authModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAuthModal() {
+    document.getElementById('authModal').style.display = 'none';
+    document.body.style.overflow = '';
+    document.getElementById('authError').style.display = 'none';
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    var loginTab = document.getElementById('tabLogin');
+    var signupTab = document.getElementById('tabSignup');
+    var submitBtn = document.getElementById('authSubmitBtn');
+    if (tab === 'login') {
+      loginTab.style.color = '#0c0c0e'; loginTab.style.borderBottomColor = '#0c0c0e';
+      signupTab.style.color = '#7a7570'; signupTab.style.borderBottomColor = 'transparent';
+      submitBtn.textContent = 'ဝင်ရန်';
+    } else {
+      signupTab.style.color = '#0c0c0e'; signupTab.style.borderBottomColor = '#0c0c0e';
+      loginTab.style.color = '#7a7570'; loginTab.style.borderBottomColor = 'transparent';
+      submitBtn.textContent = 'အကောင့်ဖွင့်ရန်';
+    }
+  }
+
+  function showAuthError(msg) {
+    var el = document.getElementById('authError');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  function showToast(msg) {
+    var toast = document.getElementById('authToast');
+    toast.textContent = msg; toast.style.display = 'block';
+    setTimeout(function() { toast.style.display = 'none'; }, 3000);
+  }
+
+  function handleAuth() {
+    var email = document.getElementById('authEmail').value.trim();
+    var password = document.getElementById('authPassword').value;
+    var btn = document.getElementById('authSubmitBtn');
+
+    if (!email || !password) { showAuthError('အီးမေးလ်နဲ့ စကားဝှက် ထည့်ပါ။'); return; }
+    if (password.length < 6) { showAuthError('စကားဝှက်သည် အနည်းဆုံး စာလုံး ၆ လုံး ရှိရပါမည်။'); return; }
+
+    document.getElementById('authError').style.display = 'none';
+    btn.textContent = 'ခဏစောင့်ပါ...';
+    btn.disabled = true;
+
+    var endpoint = currentTab === 'login'
+      ? SUPABASE_AUTH_URL + '/token?grant_type=password'
+      : SUPABASE_AUTH_URL + '/signup';
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: email, password: password })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      btn.textContent = currentTab === 'login' ? 'ဝင်ရန်' : 'အကောင့်ဖွင့်ရန်';
+
+      if (data.error || data.error_description || data.msg) {
+        var errMsg = data.error_description || data.msg || data.error || 'တစ်ခုခု မှားယွင်းသွားပါတယ်။';
+        if (errMsg.includes('Invalid login')) errMsg = 'အီးမေးလ် သို့မဟုတ် စကားဝှက် မမှန်ပါ။';
+        if (errMsg.includes('already registered')) errMsg = 'ဒီအီးမေးလ်နဲ့ အကောင့်ရှိပြီးသားပါ။ ဝင်ကြည့်ပါ။';
+        showAuthError(errMsg); return;
+      }
+
+      if (data.access_token && data.user) {
+        currentUser = data.user;
+        localStorage.setItem('clearit_token', data.access_token);
+        localStorage.setItem('clearit_user', JSON.stringify(data.user));
+        closeAuthModal(); updateAuthUI();
+        showToast(currentTab === 'login' ? '✓ ပြန်လာတာ ကြိုဆိုပါတယ်!' : '✓ အကောင့်ဖွင့်ပြီးပါပြီ! ClearIt မှ ကြိုဆိုပါတယ်!');
+        loadFromSupabase();
+      }
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.textContent = currentTab === 'login' ? 'ဝင်ရန်' : 'အကောင့်ဖွင့်ရန်';
+      showAuthError('ကွန်ရက်ချို့ယွင်းနေပါတယ်။ ထပ်စမ်းကြည့်ပါ။');
+    });
+  }
+
+  function signOut() {
+    currentUser = null;
+    localStorage.removeItem('clearit_token');
+    localStorage.removeItem('clearit_user');
+    updateAuthUI();
+    showToast('✓ အောင်မြင်စွာ ထွက်ပြီးပါပြီ။');
+    document.getElementById('historySection').style.display = 'none';
+  }
+
+  document.getElementById('authModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAuthModal();
+  });
+
+  initAuth();
+</script>
+
+<script>
+  // ---- HERO LIVE SIMPLIFIER ----
+  function heroSimplify() {
+    var inputEl = document.getElementById('heroInput');
+    var text = inputEl ? inputEl.value.trim() : '';
+    if (!text || text.length < 10) {
+      inputEl.style.borderColor = 'rgba(232,52,26,0.5)';
+      setTimeout(function() { inputEl.style.borderColor = 'rgba(255,255,255,0.1)'; }, 1000);
+      return;
+    }
+    var btn = document.getElementById('heroBtn');
+    var btnText = document.getElementById('heroBtnText');
+    var loader = document.getElementById('heroLoader');
+    btnText.style.display = 'none'; loader.style.display = 'inline';
+    loader.textContent = 'ရှင်းလင်းနေသည်...'; btn.disabled = true;
+
+    fetch('https://clearit-xezb.onrender.com/api/simplify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, outputLang: 'Burmese', mode: 'simplify' })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(result) {
+      var outputText = result.simplified || result.text || '';
+      if (!outputText) throw new Error('No result');
+      document.getElementById('heroResultText').textContent = outputText;
+      document.getElementById('heroLang').textContent = '🌐 ' + (result.language || 'Burmese') + ' · အမျိုးအစား: ' + (result.theme ? result.theme.mood : 'Tech');
+      document.getElementById('heroInputState').style.display = 'none';
+      document.getElementById('heroResultState').style.display = 'block';
+      if (result.theme && result.theme.accent) {
+        document.getElementById('heroResult').style.borderColor = result.theme.accent + '33';
+        document.getElementById('heroResult').style.background = result.theme.accent + '11';
+      }
+      btnText.style.display = 'inline'; loader.style.display = 'none'; btn.disabled = false;
+    })
+    .catch(function() {
+      loader.textContent = 'ထပ်စမ်းပါ';
+      setTimeout(function() { btnText.style.display = 'inline'; loader.style.display = 'none'; btn.disabled = false; }, 1500);
+    });
+  }
+
+  function heroReset() {
+    document.getElementById('heroInput').value = '';
+    document.getElementById('heroInputState').style.display = 'block';
+    document.getElementById('heroResultState').style.display = 'none';
+    document.getElementById('heroResult').style.borderColor = '';
+    document.getElementById('heroResult').style.background = '';
+  }
+
+  // ---- LANGUAGE PILL SELECTOR ----
+  document.getElementById('langPills').addEventListener('click', (e) => {
+    const pill = e.target.closest('.lang-pill');
+    if (!pill) return;
+    document.querySelectorAll('.lang-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    // If a scan is loaded, update the hint to show the newly selected language
+    if (scannedImageBase64) updateScanHint();
+  });
+
+  // Show a hint under the result card when scan is active so user knows they can switch language
+  function updateScanHint() {
+    let hint = document.getElementById('scanLangHint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = 'scanLangHint';
+      hint.style.cssText = 'width:100%; text-align:center; margin-top:12px; font-size:12px; font-family:"Noto Sans Myanmar","DM Mono",monospace; color:var(--app-muted); letter-spacing:0.5px;';
+      document.getElementById('resultCard').insertAdjacentElement('afterend', hint);
+    }
+    const activePill = document.querySelector('.lang-pill.active');
+    const lang = activePill ? activePill.dataset.lang : 'English';
+    hint.textContent = '📷 စကင်ဖတ်ထားသည် - အပေါ်က ဘာသာစကားကို ပြောင်းပြီး ရှင်းလင်းမယ် ✦ ကို နှိပ်ပါ';
+    hint.style.display = 'block';
+  }
+
+  function clearScanHint() {
+    const hint = document.getElementById('scanLangHint');
+    if (hint) hint.style.display = 'none';
+  }
+
+  // ---- SCROLL REVEAL ----
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) setTimeout(() => entry.target.classList.add('visible'), i * 80);
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  // ---- APP LOGIC ----
+  let historyItems = [];
+  let currentResult = null;
+  let currentInputText = '';
+  let currentMode = 'simplify';
+  let currentLevel = 'standard';
+
+  // ---- LEVEL SWITCHING ----
+  function setLevel(level) {
+    currentLevel = level;
+  }
+
+  // ---- 429 COUNTDOWN AUTO-RETRY ----
+  let _429Timer = null;
+
+  function clear429Timer() {
+    if (_429Timer) { clearInterval(_429Timer); _429Timer = null; }
+  }
+
+  function show429Error(retryFn) {
+    clear429Timer();
+    const errorMsg = document.getElementById('errorMsg');
+    let secs = 60;
+
+    function render() {
+      errorMsg.innerHTML =
+        `⏳ ClearIt ခဏနားနေပါတယ် - AI အသုံးပြုသူများနေပါတယ်။ ` +
+        `<strong style="color:#ffc080">${secs}s</strong> အတွင်း ပြန်စမ်းပါမည်...`;
+      errorMsg.classList.add('visible');
+    }
+
+    render();
+    _429Timer = setInterval(() => {
+      secs--;
+      if (secs <= 0) {
+        clear429Timer();
+        errorMsg.classList.remove('visible');
+        retryFn();
+      } else {
+        render();
+      }
+    }, 1000);
+  }
+
+  // ---- SCAN DEBUG PANEL ----
+  function showScanDebug(raw, cleaned, final) {
+    document.getElementById('debugRawOcr').textContent  = raw     || '(ပြန်မရပါ)';
+    document.getElementById('debugCleaned').textContent = cleaned || '(မူရင်းနှင့်တူသည် - သန့်စင်မှု ကျော်သွားသည်)';
+    document.getElementById('debugFinal').textContent   = final   || '';
+    document.getElementById('scanDebugBody').classList.remove('open');
+    document.getElementById('scanDebugArrow').textContent = '▾';
+    document.getElementById('scanDebug').classList.add('visible');
+  }
+  function hideScanDebug() {
+    document.getElementById('scanDebug').classList.remove('visible');
+  }
+  function toggleScanDebug() {
+    const body  = document.getElementById('scanDebugBody');
+    const arrow = document.getElementById('scanDebugArrow');
+    const open  = body.classList.toggle('open');
+    arrow.textContent = open ? '▴' : '▾';
+  }
+
+  // ---- EXPLAIN RENDERER ----
+  // Converts "[word = definition]" annotations into styled HTML spans.
+  // All non-annotation text is HTML-escaped for safety.
+  function buildExplainedHTML(text) {
+    const regex = /\[([^\]=\n]{1,60}?)\s*=\s*([^\]\n]{1,120}?)\]/g;
+    let html = '', lastIndex = 0, match;
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    while ((match = regex.exec(text)) !== null) {
+      html += esc(text.slice(lastIndex, match.index));
+      html += `<mark class="explain-tag">${esc(match[1].trim())}<span class="explain-eq"> = </span><em class="explain-def">${esc(match[2].trim())}</em></mark>`;
+      lastIndex = match.index + match[0].length;
+    }
+    html += esc(text.slice(lastIndex));
+    // Preserve newlines as <br>
+    return html.replace(/\n/g, '<br>');
+  }
+
+  // ---- MODE SWITCHING ----
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+    if (mode === 'simplify') {
+      document.getElementById('btnText').textContent = 'ရှင်းလင်းမယ် ✦';
+      document.getElementById('langSelectLabel').textContent = '✦ ရလဒ်ကို ရှင်းလင်းပေးမည့် ဘာသာစကား';
+      document.getElementById('resultLabel').textContent = 'ရှင်းလင်းထားသည်';
+    } else if (mode === 'summarize') {
+      document.getElementById('btnText').textContent = 'အကျဉ်းချုပ်မယ် 📝';
+      document.getElementById('langSelectLabel').textContent = '📝 ရလဒ်ကို အကျဉ်းချုပ်ပေးမည့် ဘာသာစကား';
+      document.getElementById('resultLabel').textContent = 'အကျဉ်းချုပ်';
+    } else {
+      document.getElementById('btnText').textContent = 'ရှင်းပြမယ် 💡';
+      document.getElementById('langSelectLabel').textContent = '💡 အဓိပ္ပာယ်ရှင်းပြမည့် ဘာသာစကား';
+      document.getElementById('resultLabel').textContent = 'ရှင်းပြထားသည်';
+    }
+  }
+
+  // ---- SUPABASE CONFIG ----
+  const SUPABASE_URL = 'https://bblbecczygnnpnvhccub.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibGJlY2N6eWdubnBudmhjY3ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2OTcwOTIsImV4cCI6MjA5MzI3MzA5Mn0.9EiUmjVm29VKfbQJx3xKEVJTtSZVdWe6uFU74E2iy8Q';
+
+  function getUserKey() {
+    let key = localStorage.getItem('clearit_user_key');
+    if (!key) {
+      key = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+      localStorage.setItem('clearit_user_key', key);
+    }
+    return key;
+  }
+
+  async function saveToSupabase(result, inputText) {
+    try {
+      var token = localStorage.getItem('clearit_token');
+      var userKey = (currentUser && currentUser.id) ? currentUser.id : getUserKey();
+
+      const payload = {
+        user_key: userKey,
+        simplified: result.simplified,
+        language: result.language || 'Unknown',
+        mood: result.theme.mood,
+        accent: result.theme.accent,
+        input_text: (inputText || '').substring(0, 500),
+        created_at: new Date().toISOString()
+      };
+
+      // Logged-in: use JWT for RLS. Anonymous: anon key as Bearer (required by Supabase).
+      var authHeader = token ? ('Bearer ' + token) : ('Bearer ' + SUPABASE_KEY);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/simplifications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': authHeader,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const historySection = document.getElementById('historySection');
+        if (historySection) {
+          const saved = document.createElement('span');
+          saved.style.cssText = 'font-size:10px;color:rgba(100,220,120,0.9);margin-left:8px;transition:opacity 1s;';
+          saved.textContent = '✓ cloud တွင် သိမ်းပြီး';
+          const title = historySection.querySelector('.history-title');
+          if (title) {
+            title.appendChild(saved);
+            setTimeout(function() { saved.style.opacity = '0'; }, 2000);
+            setTimeout(function() { saved.remove(); }, 3000);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Supabase save error:', e.message);
+    }
+  }
+
+  async function loadFromSupabase() {
+    try {
+      var token = localStorage.getItem('clearit_token');
+      var authHeader = token ? ('Bearer ' + token) : ('Bearer ' + SUPABASE_KEY);
+      var userKey = (currentUser && currentUser.id) ? currentUser.id : getUserKey();
+
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/simplifications?user_key=eq.${userKey}&order=created_at.desc&limit=10`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': authHeader } }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.length) return;
+
+      historyItems = data.map(row => ({
+        simplified: row.simplified,
+        language: row.language,
+        mood: row.mood,
+        accent: row.accent,
+        time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        theme: {
+          mood: row.mood, accent: row.accent,
+          bg: '#0a0a0f', surface: '#13131a',
+          text: '#f0ede8', muted: 'rgba(240,237,232,0.45)',
+          border: 'rgba(255,255,255,0.08)'
+        }
+      }));
+      renderHistory();
+    } catch (e) {
+      console.log('Supabase load failed silently:', e);
+    }
+  }
+
+  // ---- PAYMENT — DISABLED ----
+  // Payment gate is temporarily off while features are being built.
+  // Re-enable by restoring checkUsageLimit() and updateUsageUI() with Stripe logic.
+
+  function checkUsageLimit() {
+    // Payment temporarily disabled — always allow
+    return true;
+  }
+
+  function updateUsageUI() {
+    // Payment temporarily disabled — hide all payment UI
+    var upgradeBtn = document.getElementById('upgradeBtn');
+    var planBadge = document.getElementById('planBadge');
+    var usageBadge = document.getElementById('usageBadge');
+    if (upgradeBtn) upgradeBtn.style.display = 'none';
+    if (planBadge) planBadge.style.display = 'none';
+    if (usageBadge) usageBadge.style.display = 'none';
+  }
+
+  function startUpgrade() {
+    // Payment temporarily disabled
+    return;
+  }
+
+  function closeUpgradeModal() {
+    document.getElementById('upgradeModal').style.display = 'none';
+  }
+
+  function proceedToPayment() {
+    // Payment temporarily disabled
+    closeUpgradeModal();
+  }
+
+  function checkSubscription() {
+    // Payment temporarily disabled — skip subscription check
+    updateUsageUI();
+  }
+
+  updateUsageUI();
+  checkSubscription();
+
+  // Char counter
+  document.getElementById('inputText').addEventListener('input', () => {
+    document.getElementById('charCount').textContent = document.getElementById('inputText').value.length;
+  });
+
+  function applyTheme(theme) {
+    const s = document.getElementById('app-section');
+    s.style.setProperty('--app-bg', theme.bg);
+    s.style.setProperty('--app-surface', theme.surface);
+    s.style.setProperty('--app-text', theme.text);
+    s.style.setProperty('--app-accent', theme.accent);
+    s.style.setProperty('--app-muted', theme.muted);
+    s.style.setProperty('--app-border', theme.border);
+    document.getElementById('moodBadge').classList.add('visible');
+    document.getElementById('moodLabel').textContent = theme.mood;
+    document.getElementById('themeInfo').textContent = 'အမျိုးအစား: ' + theme.mood;
+  }
+
+  function copyResult() {
+    navigator.clipboard.writeText(document.getElementById('resultText').textContent).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'ကူးပြီးပါပြီ!';
+      setTimeout(() => btn.textContent = 'ကူးမယ်', 2000);
+    });
+  }
+
+  function shareResult() {
+    if (!currentResult) return;
+    const text = '✦ ClearIt ဖြင့် ရှင်းလင်းထားသည်:\n\n"' + currentResult.simplified + '"\n\nအကြောင်းအရာ: ' + currentResult.theme.mood + ' | ဘာသာစကား: ' + currentResult.language;
+    if (navigator.share) {
+      navigator.share({ title: 'ClearIt', text });
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.share-btn');
+        btn.textContent = 'ကူးပြီးပါပြီ!';
+        setTimeout(() => btn.textContent = 'မျှဝေမယ် ↗', 2000);
+      });
+    }
+  }
+
+  function resetFeedback() {
+    const likeBtn    = document.getElementById('likeBtn');
+    const dislikeBtn = document.getElementById('dislikeBtn');
+    const thanks     = document.getElementById('feedbackThanks');
+    if (!likeBtn) return;
+    likeBtn.disabled    = false;
+    dislikeBtn.disabled = false;
+    likeBtn.classList.remove('selected-like', 'selected-dislike');
+    dislikeBtn.classList.remove('selected-like', 'selected-dislike');
+    thanks.classList.remove('visible');
+  }
+
+  async function submitFeedback(rating) {
+    if (!currentResult) return;
+    const likeBtn    = document.getElementById('likeBtn');
+    const dislikeBtn = document.getElementById('dislikeBtn');
+    const thanks     = document.getElementById('feedbackThanks');
+
+    // Disable both immediately to prevent double-click
+    likeBtn.disabled    = true;
+    dislikeBtn.disabled = true;
+    (rating === 'like' ? likeBtn : dislikeBtn).classList.add('selected-' + rating);
+
+    try {
+      var userKey = (typeof currentUser !== 'undefined' && currentUser && currentUser.id)
+        ? currentUser.id : getUserKey();
+      await fetch('https://clearit-xezb.onrender.com/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_key:    userKey,
+          input_text:  currentInputText,
+          output_text: currentResult.simplified || '',
+          language:    currentResult.language   || 'Unknown',
+          mood:        (currentResult.theme && currentResult.theme.mood) || 'Tech',
+          rating,
+          mode:        currentResult.mode || currentMode
+        })
+      });
+    } catch (e) {
+      console.warn('Feedback send failed (non-critical):', e.message);
+    }
+
+    // Show confirmation regardless of network outcome
+    thanks.classList.add('visible');
+  }
+
+  function addToHistory(result, inputText) {
+    historyItems.unshift({
+      simplified: result.simplified, language: result.language,
+      mood: result.theme.mood, accent: result.theme.accent,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      theme: result.theme
+    });
+    if (historyItems.length > 10) historyItems.pop();
+    renderHistory();
+    saveToSupabase(result, inputText);
+  }
+
+  function renderHistory() {
+    const section = document.getElementById('historySection');
+    const list = document.getElementById('historyList');
+    if (historyItems.length === 0) { section.classList.remove('visible'); return; }
+    section.classList.add('visible');
+    document.getElementById('historyCount').textContent = historyItems.length;
+    list.innerHTML = historyItems.map((item, i) => `
+      <div class="history-item" onclick="restoreHistory(${i})">
+        <div class="history-item-meta">
+          <span class="history-mood" style="background:${item.accent}22;color:${item.accent}">${item.mood}</span>
+          <span class="history-lang">🌐 ${item.language}</span>
+          <span class="history-time">${item.time}</span>
+        </div>
+        <div class="history-simplified">${item.simplified}</div>
+        <div class="history-hint">ပြန်ဖွင့်ရန် နှိပ်ပါ</div>
+      </div>
+    `).join('');
+  }
+
+  function restoreHistory(i) {
+    const item = historyItems[i];
+    applyTheme(item.theme);
+    document.getElementById('resultText').textContent = item.simplified;
+    document.getElementById('langText').textContent = item.language;
+    document.getElementById('langBadge').style.display = 'inline-flex';
+    const card = document.getElementById('resultCard');
+    card.style.display = 'block'; card.classList.add('visible');
+    document.getElementById('app-section').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function clearHistory() { historyItems = []; renderHistory(); }
+
+  async function simplify() {
+    // If a scanned image is loaded, re-run the scan in the new language instead
+    if (scannedImageBase64) {
+      simplifyFromScan();
+      return;
+    }
+
+    const inputText = document.getElementById('inputText').value.trim();
+    const outputLang = (function(){ var el = document.querySelector('.lang-pill.active'); return el ? el.dataset.lang : 'English'; })();
+    const errorMsg = document.getElementById('errorMsg');
+    const resultCard = document.getElementById('resultCard');
+
+    clear429Timer();
+    errorMsg.classList.remove('visible');
+
+    const modeVerb = currentMode === 'explain' ? 'ရှင်းပြရန်' : currentMode === 'summarize' ? 'အကျဉ်းချုပ်ရန်' : 'ရှင်းလင်းရန်';
+    if (!inputText) { errorMsg.textContent = `⚠️ ${modeVerb} စာသားတစ်ခုခု ထည့်ပါ။`; errorMsg.classList.add('visible'); return; }
+    if (inputText.length < 10) { errorMsg.textContent = '⚠️ စာသားတိုလွန်းပါတယ်။ ပိုရှည်တဲ့ စာသားတစ်ခု ထည့်ပါ။'; errorMsg.classList.add('visible'); return; }
+    if (!checkUsageLimit()) return;
+
+    document.getElementById('btnText').classList.add('hidden');
+    document.getElementById('loader').classList.add('active');
+    document.getElementById('simplifyBtn').disabled = true;
+    resultCard.classList.remove('visible');
+
+    try {
+      const apiPath = currentMode === 'explain' ? '/api/explain' : '/api/simplify';
+      const body = currentMode === 'explain'
+        ? { text: inputText, outputLang: outputLang }
+        : { text: inputText, outputLang: outputLang, mode: currentMode, level: currentLevel };
+
+      const res = await fetch('https://clearit-xezb.onrender.com' + apiPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Server error ' + res.status); }
+
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+
+      const outputText = result.explained || result.simplified || result.summary || result.text || '';
+      if (!outputText) throw new Error('ဆာဗာမှ ရလဒ်မရပါ');
+
+      if (!result.theme || !result.theme.bg) {
+        result.theme = { mood: 'Tech', bg: '#0a0a0f', surface: '#13131a', text: '#f0ede8', accent: '#c8f050', muted: 'rgba(240,237,232,0.45)', border: 'rgba(255,255,255,0.08)' };
+      }
+
+      currentResult = result;
+      currentInputText = inputText;
+      result.simplified = outputText;
+      result.mode = currentMode;
+
+      applyTheme(result.theme);
+      // Show OUTPUT language (user selection), not detected image script
+      document.getElementById('langText').textContent = outputLang;
+      document.getElementById('langBadge').style.display = 'inline-flex';
+      const resultTextEl = document.getElementById('resultText');
+      if (currentMode === 'explain') {
+        resultTextEl.innerHTML = buildExplainedHTML(outputText);
+      } else {
+        resultTextEl.textContent = outputText;
+      }
+      resultCard.style.display = 'block';
+      resultCard.classList.add('visible');
+      resetFeedback();
+      hideScanDebug();
+      addToHistory(result, inputText);
+
+    } catch (err) {
+      const msg = err.message;
+      if (msg.includes('429')) {
+        show429Error(() => simplify());
+      } else {
+        errorMsg.textContent = '⚠️ ' + (msg.includes('JSON') ? 'မမျှော်လင့်ထားတဲ့ ရလဒ်ရရှိပါတယ်။ ထပ်စမ်းကြည့်ပါ။' : msg);
+        errorMsg.classList.add('visible');
+      }
+    } finally {
+      document.getElementById('btnText').classList.remove('hidden');
+      document.getElementById('loader').classList.remove('active');
+      document.getElementById('simplifyBtn').disabled = false;
+    }
+  }
+
+  document.getElementById('inputText').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) simplify();
+  });
+
+  // ---- SCANNER LOGIC ----
+  let scannedImageBase64 = null;
+
+  function openScanner() {
+    document.getElementById('cameraInput').click();
+  }
+
+  function retakeScan() {
+    scannedImageBase64 = null;
+    document.getElementById('scannerPreview').classList.remove('visible');
+    document.getElementById('scannedImage').src = '';
+    document.getElementById('cameraInput').value = '';
+    clearScanHint();
+  }
+
+  function handleScan(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    // Open crop editor — user selects the text area before processing
+    reader.onload = (e) => openCropEditor(e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  async function simplifyFromScan() {
+    const outputLang = (function(){ var el = document.querySelector('.lang-pill.active'); return el ? el.dataset.lang : 'English'; })();
+    const errorMsg = document.getElementById('errorMsg');
+    const resultCard = document.getElementById('resultCard');
+
+    clear429Timer();
+    errorMsg.classList.remove('visible');
+    if (!scannedImageBase64) return;
+
+    document.getElementById('scanBtnText').classList.add('hidden');
+    document.getElementById('scanLoader').classList.add('active');
+    document.getElementById('scanBtn').disabled = true;
+    document.getElementById('simplifyBtn').disabled = true;
+    resultCard.classList.remove('visible');
+
+    try {
+      const res = await fetch('https://clearit-xezb.onrender.com/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: scannedImageBase64, outputLang: outputLang, mode: currentMode })
+      });
+
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Server error ' + res.status); }
+
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+
+      // Debug: open DevTools console to see what OCR extracted from the image
+      console.log('📷 OCR raw extracted text:', result.extracted_text);
+      console.log('📷 Burmese script detected:', result.ocr_has_burmese);
+
+      const outputText = result.simplified || result.summary || result.text || '';
+      if (!outputText) throw new Error('ပုံထဲက စာသားကို မဖတ်နိုင်ပါ။ အလင်းပိုကောင်းအောင်လုပ်ပြီး ထပ်စမ်းကြည့်ပါ။');
+
+      if (!result.theme || !result.theme.bg) {
+        result.theme = { mood: 'Tech', bg: '#0a0a0f', surface: '#13131a', text: '#f0ede8', accent: '#c8f050', muted: 'rgba(240,237,232,0.45)', border: 'rgba(255,255,255,0.08)' };
+      }
+
+      currentResult = result;
+      currentInputText = '[စကင်ဖတ်ထားသော ပုံ]';
+      result.simplified = outputText;
+      result.mode = currentMode;
+
+      applyTheme(result.theme);
+      // Show OUTPUT language (user selection), not detected image script
+      // result.language = image source script (e.g. "Myanmar") — not the output lang
+      document.getElementById('langText').textContent = outputLang;
+      document.getElementById('langBadge').style.display = 'inline-flex';
+      document.getElementById('resultText').textContent = outputText;
+      resultCard.style.display = 'block';
+      resultCard.classList.add('visible');
+      resetFeedback();
+      showScanDebug(result.extracted_text, result.cleaned_text, outputText);
+      addToHistory(result, '[စကင်ဖတ်ထားသော ပုံ]');
+
+      // Show re-simplify hint — user can pick another language and tap Simplify It
+      updateScanHint();
+
+    } catch (err) {
+      const msg = err.message;
+      if (msg.includes('429')) {
+        show429Error(() => simplifyFromScan());
+      } else {
+        errorMsg.textContent = '⚠️ ' + msg;
+        errorMsg.classList.add('visible');
+      }
+    } finally {
+      document.getElementById('scanBtnText').classList.remove('hidden');
+      document.getElementById('scanLoader').classList.remove('active');
+      document.getElementById('scanBtn').disabled = false;
+      document.getElementById('simplifyBtn').disabled = false;
+    }
+  }
+
+  // ---- CROP EDITOR ----
+  let _cropImage = null;
+  let _cropRect  = { x: 0, y: 0, w: 0, h: 0 };
+  let _cropDragStart = null;
+  let _cropEventsReady = false; // lazy-init: canvas doesn't exist until after this script runs
+
+  function openCropEditor(dataUrl) {
+    if (!_cropEventsReady) { _initCropEvents(); _cropEventsReady = true; }
+    const canvas = document.getElementById('cropCanvas');
+    const img = new Image();
+    img.onload = () => {
+      _cropImage = img;
+      // Scale image to fit screen — leave room for header + actions
+      const maxW = Math.min(window.innerWidth - 32, 620);
+      const maxH = window.innerHeight * 0.60;
+      const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+      canvas.width  = Math.round(img.naturalWidth  * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      // Default selection = full image
+      _cropRect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+      _drawCrop();
+      document.getElementById('cropEditor').classList.add('visible');
+    };
+    img.src = dataUrl;
+  }
+
+  function _drawCrop() {
+    const canvas = document.getElementById('cropCanvas');
+    const ctx = canvas.getContext('2d');
+    const { x, y, w, h } = _cropRect;
+    // Draw full image dimmed
+    ctx.drawImage(_cropImage, 0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (w > 2 && h > 2) {
+      // Redraw crop area at full brightness
+      const sx = (x / canvas.width)  * _cropImage.naturalWidth;
+      const sy = (y / canvas.height) * _cropImage.naturalHeight;
+      const sw = (w / canvas.width)  * _cropImage.naturalWidth;
+      const sh = (h / canvas.height) * _cropImage.naturalHeight;
+      ctx.drawImage(_cropImage, sx, sy, sw, sh, x, y, w, h);
+      // Lime selection border
+      ctx.strokeStyle = '#c8f050';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      // Corner handles — 14 px visual, 28 px touch target
+      const hs = 14;
+      ctx.fillStyle = '#c8f050';
+      [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy]) => {
+        ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
+      });
+      // Rule-of-thirds guide lines
+      ctx.strokeStyle = 'rgba(200,240,80,0.25)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x + w / 3,     y);     ctx.lineTo(x + w / 3,     y + h);
+      ctx.moveTo(x + 2 * w / 3, y);     ctx.lineTo(x + 2 * w / 3, y + h);
+      ctx.moveTo(x,              y + h / 3);    ctx.lineTo(x + w, y + h / 3);
+      ctx.moveTo(x,              y + 2 * h / 3);ctx.lineTo(x + w, y + 2 * h / 3);
+      ctx.stroke();
+    }
+  }
+
+  function _cropGetPos(e) {
+    const canvas = document.getElementById('cropCanvas');
+    const r = canvas.getBoundingClientRect();
+    const sx = canvas.width  / r.width;
+    const sy = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+  }
+
+  function _initCropEvents() {
+    const canvas = document.getElementById('cropCanvas');
+    const HIT = 28; // touch target radius for corner handles (px in canvas coords)
+
+    // Determine what a pointer-down at `pos` should do
+    function getMode(pos) {
+      const { x, y, w, h } = _cropRect;
+      if (w < 1 || h < 1) return 'new';
+      const corners = [
+        { m: 'tl', cx: x,     cy: y     },
+        { m: 'tr', cx: x + w, cy: y     },
+        { m: 'bl', cx: x,     cy: y + h },
+        { m: 'br', cx: x + w, cy: y + h },
+      ];
+      for (const { m, cx, cy } of corners) {
+        if (Math.abs(pos.x - cx) <= HIT && Math.abs(pos.y - cy) <= HIT) return 'resize-' + m;
+      }
+      if (pos.x >= x && pos.x <= x + w && pos.y >= y && pos.y <= y + h) return 'move';
+      return 'new';
+    }
+
+    // Closure state — keeps drag context without polluting outer scope
+    let mode = null, dragStart = null, rectSnap = null;
+
+    function onStart(e) {
+      e.preventDefault();
+      const pos = _cropGetPos(e);
+      mode      = getMode(pos);
+      dragStart = pos;
+      rectSnap  = { ..._cropRect };
+      if (mode === 'new') _cropRect = { x: pos.x, y: pos.y, w: 0, h: 0 };
+      if (mode === 'move') canvas.style.cursor = 'grabbing';
+    }
+
+    function onMove(e) {
+      e.preventDefault();
+      const pos = _cropGetPos(e);
+
+      if (!dragStart) {
+        // Hovering — update cursor to signal what will happen on tap
+        const hm = getMode(pos);
+        canvas.style.cursor =
+          hm === 'move'                                      ? 'grab'         :
+          hm === 'resize-tl' || hm === 'resize-br'          ? 'nwse-resize'  :
+          hm === 'resize-tr' || hm === 'resize-bl'          ? 'nesw-resize'  : 'crosshair';
+        return;
+      }
+
+      const dx = pos.x - dragStart.x;
+      const dy = pos.y - dragStart.y;
+      const { x: ox, y: oy, w: ow, h: oh } = rectSnap;
+
+      if (mode === 'new') {
+        const x = Math.max(0, Math.min(dragStart.x, pos.x));
+        const y = Math.max(0, Math.min(dragStart.y, pos.y));
+        _cropRect = {
+          x, y,
+          w: Math.min(Math.abs(pos.x - dragStart.x), canvas.width  - x),
+          h: Math.min(Math.abs(pos.y - dragStart.y), canvas.height - y)
+        };
+      } else if (mode === 'move') {
+        _cropRect = {
+          x: Math.max(0, Math.min(ox + dx, canvas.width  - ow)),
+          y: Math.max(0, Math.min(oy + dy, canvas.height - oh)),
+          w: ow, h: oh
+        };
+      } else if (mode === 'resize-tl') {
+        const nx = Math.max(0,              Math.min(pos.x, ox + ow - 10));
+        const ny = Math.max(0,              Math.min(pos.y, oy + oh - 10));
+        _cropRect = { x: nx, y: ny, w: ox + ow - nx, h: oy + oh - ny };
+      } else if (mode === 'resize-tr') {
+        const ny = Math.max(0,              Math.min(pos.y, oy + oh - 10));
+        _cropRect = { x: ox, y: ny, w: Math.max(10, Math.min(pos.x - ox, canvas.width  - ox)), h: oy + oh - ny };
+      } else if (mode === 'resize-bl') {
+        const nx = Math.max(0,              Math.min(pos.x, ox + ow - 10));
+        _cropRect = { x: nx, y: oy, w: ox + ow - nx, h: Math.max(10, Math.min(pos.y - oy, canvas.height - oy)) };
+      } else if (mode === 'resize-br') {
+        _cropRect = {
+          x: ox, y: oy,
+          w: Math.max(10, Math.min(pos.x - ox, canvas.width  - ox)),
+          h: Math.max(10, Math.min(pos.y - oy, canvas.height - oy))
+        };
+      }
+      _drawCrop();
+    }
+
+    function onEnd() {
+      const snap   = rectSnap;
+      const wasNew = mode === 'new';
+      mode = null; dragStart = null; rectSnap = null;
+      canvas.style.cursor = 'crosshair';
+      // Accidental tiny tap → keep previous selection rather than collapsing to nothing
+      if (wasNew && (_cropRect.w < 20 || _cropRect.h < 20)) {
+        _cropRect = (snap && snap.w >= 20) ? snap : { x: 0, y: 0, w: canvas.width, h: canvas.height };
+        _drawCrop();
+      }
+    }
+
+    canvas.addEventListener('mousedown',  onStart);
+    canvas.addEventListener('mousemove',  onMove);
+    canvas.addEventListener('mouseup',    onEnd);
+    canvas.addEventListener('mouseleave', onEnd);
+    canvas.addEventListener('touchstart', onStart, { passive: false });
+    canvas.addEventListener('touchmove',  onMove,  { passive: false });
+    canvas.addEventListener('touchend',   onEnd);
+  }
+
+  function confirmCrop() {
+    const canvas = document.getElementById('cropCanvas');
+    const { x, y, w, h } = _cropRect;
+    if (w < 5 || h < 5) return;
+    // Render cropped region at original resolution
+    const scaleX = _cropImage.naturalWidth  / canvas.width;
+    const scaleY = _cropImage.naturalHeight / canvas.height;
+    const off = document.createElement('canvas');
+    off.width  = Math.round(w * scaleX);
+    off.height = Math.round(h * scaleY);
+    off.getContext('2d').drawImage(
+      _cropImage,
+      x * scaleX, y * scaleY, w * scaleX, h * scaleY,
+      0, 0, off.width, off.height
+    );
+    const croppedDataUrl = off.toDataURL('image/jpeg', 0.95);
+    scannedImageBase64 = croppedDataUrl.split(',')[1];
+    document.getElementById('scannedImage').src = croppedDataUrl;
+    document.getElementById('scannerPreview').classList.add('visible');
+    document.getElementById('cropEditor').classList.remove('visible');
+    updateScanHint();
+    simplifyFromScan();
+  }
+
+  function cancelCrop() {
+    document.getElementById('cropEditor').classList.remove('visible');
+    _cropImage = null;
+    _cropDragStart = null;
+  }
+
+  function resetCropSelection() {
+    const canvas = document.getElementById('cropCanvas');
+    _cropRect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+    _drawCrop();
+  }
+
+</script>
+
+<!-- CROP EDITOR OVERLAY -->
+<div class="crop-editor" id="cropEditor">
+  <div class="crop-editor-header">
+    <div class="crop-editor-title">📐 စာသားရှိတဲ့နေရာကို ရွေးပါ</div>
+    <div class="crop-editor-hint">ပုံပေါ်မှာ ဆွဲပြီး ရွေးပါ။ ရွေးထားတဲ့ ဧရိယာကိုပဲ လုပ်ဆောင်ပါမည်။</div>
+  </div>
+  <div class="crop-canvas-wrap">
+    <canvas id="cropCanvas"></canvas>
+  </div>
+  <div class="crop-editor-actions">
+    <button class="crop-cancel-btn" onclick="cancelCrop()">✕ မလုပ်တော့ပါ</button>
+    <button class="crop-reset-btn" onclick="resetCropSelection()">ပြန်စမယ်</button>
+    <button class="crop-confirm-btn" onclick="confirmCrop()">ဒီနေရာကို သုံးမယ် ✓</button>
+  </div>
+</div>
+
+</body>
+</html>
